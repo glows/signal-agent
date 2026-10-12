@@ -33,7 +33,11 @@ const responseSchema = z.object({
 type Fetcher = (url: string, init?: RequestInit) => Promise<Response>;
 export class XDataError extends Error {
   constructor(
-    public readonly kind: "configuration" | "rate_limit" | "upstream",
+    public readonly kind:
+      | "configuration"
+      | "billing"
+      | "rate_limit"
+      | "upstream",
     message: string,
   ) {
     super(message);
@@ -70,6 +74,11 @@ async function request(
   } catch {
     throw new XDataError("upstream", "X 请求超时或网络不可用，请稍后重试。");
   }
+  if (response.status === 402)
+    throw new XDataError(
+      "billing",
+      "X API 返回 402（需要付款）。请在 X Developer Console 的 Credits 页面检查余额、付费状态和支出上限；重新 OAuth 授权无法解决此计费错误。",
+    );
   if (response.status === 429)
     throw new XDataError(
       "rate_limit",

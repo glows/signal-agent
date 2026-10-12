@@ -18,6 +18,19 @@ const samplePost = {
 const payload = { data: [samplePost], includes: { users: [sampleUser] } };
 
 describe("X data connector", () => {
+  it("explains payment-required responses without treating them as lost OAuth grants", async () => {
+    await expect(
+      fetchXPeople(
+        [{ type: "keyword", value: "AI" }],
+        "token",
+        30,
+        async () => new Response("", { status: 402 }),
+      ),
+    ).rejects.toMatchObject({
+      kind: "billing",
+      message: expect.stringContaining("Credits"),
+    });
+  });
   it("reads X only from the backend and preserves the original post", async () => {
     const requests: string[] = [];
     const result = await discoverXLeads(

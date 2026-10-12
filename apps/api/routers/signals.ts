@@ -45,9 +45,11 @@ export const signalsRouter = router({
             code:
               error.kind === "rate_limit"
                 ? "TOO_MANY_REQUESTS"
-                : error.kind === "configuration"
-                  ? "BAD_REQUEST"
-                  : "BAD_GATEWAY",
+                : error.kind === "billing"
+                  ? "PRECONDITION_FAILED"
+                  : error.kind === "configuration"
+                    ? "BAD_REQUEST"
+                    : "BAD_GATEWAY",
             message: error.message,
           });
         throw new TRPCError({
