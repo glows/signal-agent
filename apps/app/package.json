@@ -18,6 +18,7 @@
   "dependencies": {
     "@better-auth/passkey": "^1.7.4",
     "@better-auth/stripe": "^1.7.4",
+    "@repo/core": "workspace:*",
     "@repo/ui": "workspace:*",
     "@tanstack/react-query": "^5.102.8",
     "@tanstack/react-router": "^1.170.35",

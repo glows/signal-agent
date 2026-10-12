@@ -9,6 +9,7 @@ import { Hono } from "hono";
 
 import { billingRouter } from "../routers/billing.js";
 import { configRouter } from "../routers/config.js";
+import { signalsRouter } from "../routers/signals.js";
 import type { AppContext } from "./context.js";
 import { router } from "./trpc.js";
 
@@ -16,6 +17,7 @@ import { router } from "./trpc.js";
 const appRouter = router({
   billing: billingRouter,
   config: configRouter,
+  signals: signalsRouter,
 });
 
 // HTTP router

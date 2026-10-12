@@ -1,0 +1,1670 @@
+.signal-workspace {
+  font-family: Inter, "DM Sans", "Segoe UI", "Microsoft YaHei", sans-serif;
+  color: #1e2331;
+  background: #f7f8fa;
+  font-synthesis: none;
+}
+.signal-workspace * {
+  box-sizing: border-box;
+}
+.signal-workspace {
+  margin: 0;
+  min-width: 320px;
+}
+.signal-workspace button,
+.signal-workspace input,
+.signal-workspace textarea,
+.signal-workspace select {
+  font: inherit;
+}
+.signal-workspace button {
+  cursor: pointer;
+}
+.signal-workspace button:disabled {
+  cursor: not-allowed;
+}
+.signal-workspace button:focus-visible,
+.signal-workspace input:focus-visible,
+.signal-workspace textarea:focus-visible,
+.signal-workspace select:focus-visible {
+  outline: 3px solid #b3a7ff;
+  outline-offset: 2px;
+}
+.signal-workspace.app-shell {
+  min-height: 100vh;
+  display: flex;
+}
+.signal-workspace .sidebar {
+  width: 244px;
+  flex-shrink: 0;
+  background: #141620;
+  color: #b5b8c9;
+  display: flex;
+  flex-direction: column;
+  padding: 24px 14px 17px;
+  min-height: 100vh;
+  position: sticky;
+  top: 0;
+  height: 100vh;
+}
+.signal-workspace .sidebar-brand {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  padding: 1px 11px 31px;
+}
+.signal-workspace .brand-icon {
+  width: 33px;
+  height: 33px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #9d82f8, #6653dc);
+  color: white;
+  display: grid;
+  place-items: center;
+  box-shadow: 0 5px 15px #745fe251;
+}
+.signal-workspace .sidebar-brand strong {
+  font-size: 19px;
+  letter-spacing: -1.1px;
+  color: #f7f7fb;
+  display: block;
+  line-height: 19px;
+}
+.signal-workspace .sidebar-brand strong span {
+  color: #bdaeff;
+}
+.signal-workspace .sidebar-brand small {
+  font-size: 8px;
+  font-weight: 800;
+  letter-spacing: 1.4px;
+  color: #898c9f;
+}
+.signal-workspace .workspace-switch {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 10px;
+  border: 1px solid #30333e;
+  border-radius: 9px;
+  background: #1c1f2a;
+  margin: 0 4px 30px;
+}
+.signal-workspace .workspace-switch > div {
+  min-width: 0;
+  flex: 1;
+}
+.signal-workspace .workspace-switch strong,
+.signal-workspace .workspace-switch small {
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.signal-workspace .workspace-switch strong {
+  font-size: 12px;
+  color: #f4f4f8;
+}
+.signal-workspace .workspace-switch small {
+  font-size: 10px;
+  color: #888c9f;
+  margin-top: 3px;
+}
+.signal-workspace .workspace-avatar,
+.signal-workspace .user-avatar {
+  width: 29px;
+  height: 29px;
+  border-radius: 7px;
+  background: #9377e6;
+  color: white;
+  display: grid;
+  place-items: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+.signal-workspace .nav-group-label {
+  font-size: 10px;
+  text-transform: uppercase;
+  letter-spacing: 1.4px;
+  color: #777b91;
+  padding: 0 14px;
+  margin-bottom: 12px;
+  font-weight: 800;
+}
+.signal-workspace .nav-bottom-label {
+  margin-top: 27px;
+}
+.signal-workspace .nav-list {
+  display: grid;
+  gap: 3px;
+}
+.signal-workspace .nav-list button {
+  width: 100%;
+  border: 0;
+  background: transparent;
+  color: #aeb1c0;
+  border-radius: 8px;
+  height: 41px;
+  padding: 0 12px;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-size: 12px;
+  font-weight: 600;
+  text-align: left;
+}
+.signal-workspace .nav-list button:hover {
+  background: #242735;
+  color: #fff;
+}
+.signal-workspace .nav-list button.active {
+  background: #2b2745;
+  color: #e6ddff;
+}
+.signal-workspace .nav-list button.active svg {
+  color: #ac95ff;
+}
+.signal-workspace .nav-list button span {
+  margin-left: auto;
+  font-size: 10px;
+  color: #8c8fa0;
+}
+.signal-workspace .sidebar-spacer {
+  flex: 1;
+}
+.signal-workspace .sidebar-callout {
+  margin: 0 4px 16px;
+  padding: 16px;
+  background: linear-gradient(145deg, #2d2853, #211f36);
+  border: 1px solid #4a3b73;
+  border-radius: 11px;
+  color: #d9cfff;
+}
+.signal-workspace .sidebar-callout svg {
+  color: #bd9fff;
+}
+.signal-workspace .sidebar-callout strong {
+  display: block;
+  font-size: 12px;
+  margin: 8px 0 5px;
+  color: #fff;
+}
+.signal-workspace .sidebar-callout p {
+  font-size: 10px;
+  line-height: 1.65;
+  margin: 0;
+  color: #bbb3d1;
+}
+.signal-workspace .sidebar-footer {
+  border-top: 1px solid #2c2f3a;
+  padding: 16px 8px 0;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10px;
+  color: #777b91;
+}
+.signal-workspace .main-shell {
+  min-width: 0;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+.signal-workspace .topbar {
+  height: 66px;
+  flex: none;
+  border-bottom: 1px solid #e9ebf0;
+  background: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 37px;
+}
+.signal-workspace .topbar-left,
+.signal-workspace .topbar-right {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+}
+.signal-workspace .topbar-left {
+  font-size: 12px;
+  color: #8c92a1;
+}
+.signal-workspace .topbar-left strong {
+  color: #353847;
+  font-weight: 600;
+}
+.signal-workspace .breadcrumb {
+  color: #ccd0d8;
+}
+.signal-workspace .topbar-right {
+  gap: 21px;
+}
+.signal-workspace .demo-badge {
+  border: 1px solid #ded7ff;
+  background: #f6f2ff;
+  color: #694fd4;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.6px;
+  border-radius: 6px;
+  padding: 7px 9px;
+  white-space: nowrap;
+}
+.signal-workspace .demo-badge span {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #8067e9;
+  margin-right: 5px;
+}
+.signal-workspace .top-icon,
+.signal-workspace .icon-button {
+  border: 0;
+  background: transparent;
+  color: #7f8596;
+  display: grid;
+  place-items: center;
+  border-radius: 7px;
+}
+.signal-workspace .top-icon {
+  padding: 3px;
+}
+.signal-workspace .top-icon:hover,
+.signal-workspace .icon-button:hover {
+  background: #f0eef9;
+  color: #644bd4;
+}
+.signal-workspace .user-avatar {
+  border-radius: 50%;
+  width: 30px;
+  height: 30px;
+  background: #e5defe;
+  color: #7256ce;
+}
+.signal-workspace .main-content {
+  width: min(1240px, 100%);
+  margin: 0 auto;
+  flex: 1;
+  padding: 38px 38px 58px;
+}
+.signal-workspace .eyebrow {
+  font-size: 10px;
+  letter-spacing: 1.6px;
+  font-weight: 800;
+  color: #816ad9;
+}
+.signal-workspace .page-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  gap: 20px;
+  margin-bottom: 28px;
+}
+.signal-workspace .page-heading h1 {
+  margin: 10px 0 9px;
+  font-size: 30px;
+  letter-spacing: -1.5px;
+  line-height: 1.15;
+  color: #1e2230;
+  font-weight: 800;
+}
+.signal-workspace .page-heading p {
+  font-size: 12px;
+  color: #8b90a1;
+  margin: 0;
+  line-height: 1.7;
+}
+.signal-workspace .heading-spark {
+  font-size: 16px;
+  color: #9b7bea;
+  margin-left: 8px;
+  vertical-align: top;
+}
+.signal-workspace .primary-button,
+.signal-workspace .secondary-button,
+.signal-workspace .ghost-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  border-radius: 8px;
+  font-weight: 700;
+  font-size: 12px;
+  min-height: 36px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+.signal-workspace .primary-button {
+  border: 1px solid #7153db;
+  background: #7153db;
+  color: white;
+  box-shadow: 0 3px 8px #6f56cd30;
+}
+.signal-workspace .primary-button:hover {
+  background: #5e41c8;
+}
+.signal-workspace .secondary-button {
+  background: white;
+  border: 1px solid #dfe2e9;
+  color: #424757;
+}
+.signal-workspace .secondary-button:hover {
+  background: #f7f7fc;
+}
+.signal-workspace .ghost-button {
+  background: transparent;
+  border: 0;
+  color: #757b8d;
+}
+.signal-workspace .hero-banner {
+  height: 220px;
+  border-radius: 13px;
+  background:
+    radial-gradient(circle at 80% 10%, #5c4b96 0, transparent 35%),
+    linear-gradient(115deg, #22203d, #302659 61%, #55468b);
+  color: white;
+  display: flex;
+  overflow: hidden;
+  position: relative;
+  padding: 28px 34px;
+  margin-bottom: 20px;
+}
+.signal-workspace .hero-banner > div:first-child {
+  position: relative;
+  z-index: 2;
+}
+.signal-workspace .hero-kicker {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 1.3px;
+  color: #c4b2ff;
+}
+.signal-workspace .hero-banner h2 {
+  font-size: 26px;
+  line-height: 1.2;
+  letter-spacing: -1px;
+  margin: 11px 0 8px;
+}
+.signal-workspace .hero-banner p {
+  font-size: 11px;
+  color: #c7c3df;
+  max-width: 360px;
+  line-height: 1.5;
+  margin: 0 0 15px;
+}
+.signal-workspace .hero-banner button {
+  border: 0;
+  background: white;
+  color: #4d3b86;
+  border-radius: 6px;
+  font-size: 11px;
+  font-weight: 800;
+  padding: 8px 12px;
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+}
+.signal-workspace .hero-banner button:hover {
+  background: #f4efff;
+}
+.signal-workspace .hero-art {
+  position: absolute;
+  right: 9%;
+  top: -62px;
+  width: 345px;
+  height: 345px;
+}
+.signal-workspace .orbit {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  border: 1px solid #bbabeb44;
+  border-radius: 50%;
+}
+.signal-workspace .orbit-one {
+  width: 145px;
+  height: 145px;
+}
+.signal-workspace .orbit-two {
+  width: 245px;
+  height: 245px;
+}
+.signal-workspace .orbit-three {
+  width: 345px;
+  height: 345px;
+}
+.signal-workspace .orbit-center {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  height: 88px;
+  width: 88px;
+  border: 1px solid #c9b5ff90;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  color: #e4d8ff;
+  background: radial-gradient(#7863ae, #624b98);
+  box-shadow: 0 0 45px #ba8cff7c;
+}
+.signal-workspace .orbit-dot {
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  background: #d9c2ff;
+  border-radius: 50%;
+  box-shadow: 0 0 20px #d2a7ff;
+}
+.signal-workspace .dot-one {
+  left: 35px;
+  top: 143px;
+}
+.signal-workspace .dot-two {
+  right: 45px;
+  top: 72px;
+  width: 9px;
+  height: 9px;
+}
+.signal-workspace .dot-three {
+  right: 81px;
+  bottom: 41px;
+  width: 7px;
+  height: 7px;
+}
+.signal-workspace .stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 15px;
+}
+.signal-workspace .stat-card {
+  background: white;
+  border: 1px solid #e9ebf0;
+  border-radius: 10px;
+  min-height: 122px;
+  padding: 17px 18px;
+}
+.signal-workspace .stat-card > span {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: #747c8d;
+  font-weight: 600;
+}
+.signal-workspace .stat-card > span svg {
+  color: #876bdf;
+}
+.signal-workspace .stat-card strong {
+  display: block;
+  font-size: 27px;
+  margin: 13px 0 1px;
+  letter-spacing: -1px;
+  color: #252835;
+}
+.signal-workspace .stat-card strong em {
+  font-size: 13px;
+  font-style: normal;
+  color: #a1a5b1;
+  font-weight: 500;
+}
+.signal-workspace .stat-card small {
+  font-size: 10px;
+  color: #a1a5b1;
+}
+.signal-workspace .section-title {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  margin: 33px 0 15px;
+}
+.signal-workspace .section-title h2 {
+  font-size: 16px;
+  letter-spacing: -0.4px;
+  margin: 0;
+  color: #272b39;
+}
+.signal-workspace .section-title p {
+  font-size: 11px;
+  color: #9298a5;
+  margin: 5px 0 0;
+}
+.signal-workspace .section-title > button {
+  border: 0;
+  background: transparent;
+  color: #765dd9;
+  font-size: 11px;
+  font-weight: 700;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+.signal-workspace .agent-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 15px;
+}
+.signal-workspace .agent-card,
+.signal-workspace .create-card {
+  min-height: 211px;
+  background: white;
+  border: 1px solid #e8eaf0;
+  border-radius: 10px;
+  padding: 17px;
+  box-shadow: 0 2px 4px #20254004;
+}
+.signal-workspace .agent-card.selected {
+  border-color: #ad9deb;
+  box-shadow: 0 0 0 2px #d9d1fa66;
+}
+.signal-workspace .agent-card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.signal-workspace .agent-symbol {
+  width: 34px;
+  height: 34px;
+  border-radius: 8px;
+  background: #f1edff;
+  color: #785adc;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .status-pill {
+  font-size: 10px;
+  font-weight: 700;
+  border-radius: 30px;
+  padding: 5px 8px;
+}
+.signal-workspace .status-pill.active {
+  background: #eaf8ef;
+  color: #31915a;
+}
+.signal-workspace .status-pill.active:before {
+  content: "";
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  background: #42b56f;
+  border-radius: 50%;
+  margin-right: 5px;
+  vertical-align: 2px;
+}
+.signal-workspace .status-pill.paused {
+  background: #f3f3f5;
+  color: #84899a;
+}
+.signal-workspace .agent-card-title {
+  background: transparent;
+  border: 0;
+  text-align: left;
+  padding: 15px 0 13px;
+  width: 100%;
+  display: block;
+}
+.signal-workspace .agent-card-title strong {
+  font-size: 13px;
+  color: #282c3b;
+  display: block;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.signal-workspace .agent-card-title span {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+  font-size: 10px;
+  line-height: 1.5;
+  color: #9398a8;
+  margin-top: 5px;
+  min-height: 30px;
+}
+.signal-workspace .agent-meta {
+  display: flex;
+  justify-content: space-between;
+  gap: 5px;
+  border-top: 1px solid #eff0f3;
+  padding: 12px 0;
+  color: #969ba8;
+  font-size: 10px;
+}
+.signal-workspace .agent-meta span {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.signal-workspace .agent-meta strong {
+  color: #504975;
+}
+.signal-workspace .agent-card-actions {
+  display: flex;
+  align-items: center;
+  gap: 7px;
+}
+.signal-workspace .run-button {
+  flex: 1;
+  border: 1px solid #dcd4fa;
+  background: #f5f2ff;
+  color: #7055cf;
+  border-radius: 6px;
+  height: 29px;
+  font-size: 10px;
+  font-weight: 800;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+.signal-workspace .run-button:hover {
+  background: #ede7ff;
+}
+.signal-workspace .run-button:disabled {
+  opacity: 0.48;
+}
+.signal-workspace .agent-card-actions .icon-button {
+  height: 29px;
+  width: 29px;
+}
+.signal-workspace .more-menu {
+  position: relative;
+}
+.signal-workspace .more-menu summary {
+  list-style: none;
+  color: #818798;
+  display: grid;
+  place-items: center;
+  width: 28px;
+  height: 29px;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.signal-workspace .more-menu summary::-webkit-details-marker {
+  display: none;
+}
+.signal-workspace .more-menu summary:hover {
+  background: #f2f1f8;
+}
+.signal-workspace .more-menu > div {
+  position: absolute;
+  right: 0;
+  top: 33px;
+  background: #fff;
+  border: 1px solid #e7e9ef;
+  box-shadow: 0 10px 25px #20203822;
+  border-radius: 8px;
+  padding: 5px;
+  min-width: 90px;
+  z-index: 3;
+}
+.signal-workspace .more-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: none;
+  padding: 8px;
+  font-size: 11px;
+  border-radius: 5px;
+  color: #4f5565;
+}
+.signal-workspace .more-menu button:hover {
+  background: #f5f3fb;
+}
+.signal-workspace .more-menu button.danger {
+  color: #d55265;
+}
+.signal-workspace .create-card {
+  border: 1px dashed #d4cce8;
+  background: #fbfaff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: 9px;
+  color: #7764b8;
+}
+.signal-workspace .create-card:hover {
+  border-color: #967be4;
+  background: #f8f4ff;
+}
+.signal-workspace .create-card > span {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: #eee7ff;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .create-card strong {
+  font-size: 12px;
+}
+.signal-workspace .create-card small {
+  font-size: 10px;
+  color: #a4a0b2;
+}
+.signal-workspace .info-strip {
+  display: flex;
+  gap: 13px;
+  padding: 16px 18px;
+  background: #f2efff;
+  border: 1px solid #e6dffe;
+  border-radius: 9px;
+  color: #745bd0;
+}
+.signal-workspace .info-strip div {
+  display: grid;
+  gap: 4px;
+}
+.signal-workspace .info-strip strong {
+  font-size: 11px;
+}
+.signal-workspace .info-strip span {
+  font-size: 10px;
+  color: #8a7dac;
+}
+.signal-workspace .count-label {
+  font-size: 11px;
+  color: #8f82bd;
+  background: #f0ecfb;
+  border-radius: 5px;
+  padding: 3px 6px;
+  margin-left: 4px;
+}
+.signal-workspace .recent-title {
+  margin-top: 39px;
+}
+.signal-workspace .lead-list {
+  background: #fff;
+  border: 1px solid #e9ebf0;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.signal-workspace .lead-row {
+  display: flex;
+  align-items: center;
+  gap: 13px;
+  padding: 16px 18px;
+  border-bottom: 1px solid #eff0f3;
+}
+.signal-workspace .lead-row:last-child {
+  border-bottom: 0;
+}
+.signal-workspace .lead-row:hover {
+  background: #fcfbff;
+}
+.signal-workspace .avatar {
+  flex: none;
+  width: 35px;
+  height: 35px;
+  border-radius: 10px;
+  background: #e7ddff;
+  color: #7051ca;
+  font-size: 14px;
+  font-weight: 800;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .lead-row:nth-child(4n + 2) .avatar {
+  background: #e0f3ee;
+  color: #318e77;
+}
+.signal-workspace .lead-row:nth-child(4n + 3) .avatar {
+  background: #fff0df;
+  color: #c67d35;
+}
+.signal-workspace .lead-row:nth-child(4n + 4) .avatar {
+  background: #e4ebff;
+  color: #5373ce;
+}
+.signal-workspace .lead-person {
+  flex: 1;
+  min-width: 0;
+}
+.signal-workspace .lead-person button {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 0;
+  padding: 0;
+  font-size: 12px;
+  font-weight: 800;
+  color: #292d3b;
+}
+.signal-workspace .lead-person button:hover {
+  color: #775bdf;
+}
+.signal-workspace .lead-person > span {
+  display: block;
+  font-size: 10px;
+  color: #7f8595;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  margin-top: 3px;
+}
+.signal-workspace .lead-person small {
+  display: block;
+  font-size: 9px;
+  color: #aaaeb9;
+  margin-top: 5px;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+.signal-workspace .lead-score {
+  text-align: center;
+  min-width: 46px;
+}
+.signal-workspace .lead-score strong {
+  font-size: 16px;
+  color: #6e55d2;
+}
+.signal-workspace .lead-score span {
+  display: block;
+  font-size: 9px;
+  color: #a0a5b1;
+}
+.signal-workspace .feedback {
+  border: 1px solid #e3e5eb;
+  border-radius: 6px;
+  background: #fff;
+  padding: 6px 7px;
+  color: #737a8b;
+  font-size: 10px;
+  font-weight: 700;
+}
+.signal-workspace .feedback.fit {
+  color: #358e61;
+  background: #eefaf2;
+  border-color: #ccebd7;
+}
+.signal-workspace .feedback.not_fit {
+  color: #bd6570;
+  background: #fff0f2;
+  border-color: #f3d5db;
+}
+.signal-workspace .empty-leads {
+  background: #fff;
+  border: 1px dashed #dfe1e9;
+  border-radius: 10px;
+  text-align: center;
+  padding: 34px 20px;
+  color: #a3a7b3;
+}
+.signal-workspace .empty-leads > span {
+  display: grid;
+  place-items: center;
+  width: 48px;
+  height: 48px;
+  border-radius: 50%;
+  background: #f3f0ff;
+  color: #856de0;
+  margin: 0 auto;
+}
+.signal-workspace .empty-leads h3 {
+  font-size: 13px;
+  color: #4c5161;
+  margin: 13px 0 5px;
+}
+.signal-workspace .empty-leads p {
+  font-size: 11px;
+  margin: 0 0 14px;
+}
+.signal-workspace .page-count {
+  color: #8e93a1;
+  font-size: 11px;
+  padding-bottom: 5px;
+}
+.signal-workspace .filter-panel {
+  background: white;
+  border: 1px solid #e9ebf0;
+  border-radius: 10px;
+  padding: 16px;
+  margin-bottom: 20px;
+}
+.signal-workspace .search-box {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  border: 1px solid #e4e6ed;
+  border-radius: 7px;
+  padding: 0 12px;
+  height: 38px;
+  color: #9ba0ad;
+  margin-bottom: 12px;
+}
+.signal-workspace .search-box input {
+  border: 0;
+  outline: none;
+  flex: 1;
+  min-width: 0;
+  font-size: 11px;
+  color: #292d38;
+}
+.signal-workspace .search-box input::placeholder {
+  color: #b1b5c0;
+}
+.signal-workspace .filter-row {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: #8e93a1;
+  flex-wrap: wrap;
+}
+.signal-workspace .filter-row select {
+  border: 1px solid #e4e6ed;
+  border-radius: 6px;
+  background: #fff;
+  color: #6c7281;
+  padding: 7px 9px;
+  font-size: 10px;
+  max-width: 180px;
+}
+.signal-workspace .results-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin: 0 1px 12px;
+}
+.signal-workspace .results-heading strong {
+  font-size: 13px;
+  color: #303443;
+}
+.signal-workspace .results-heading strong span {
+  background: #ece8fa;
+  color: #7560c4;
+  padding: 2px 6px;
+  border-radius: 5px;
+  font-size: 10px;
+}
+.signal-workspace .results-heading small {
+  color: #a4a9b6;
+  font-size: 10px;
+}
+.signal-workspace .settings-card {
+  background: white;
+  border: 1px solid #e9ebf0;
+  border-radius: 11px;
+  display: flex;
+  gap: 17px;
+  padding: 23px;
+  margin-bottom: 15px;
+  max-width: 760px;
+}
+.signal-workspace .settings-icon {
+  flex: none;
+  width: 39px;
+  height: 39px;
+  border-radius: 9px;
+  background: #eaf4f0;
+  color: #4eaa7e;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .settings-icon.purple {
+  background: #f1edff;
+  color: #785cda;
+}
+.signal-workspace .settings-card h2 {
+  font-size: 14px;
+  margin: 1px 0 8px;
+}
+.signal-workspace .settings-card p {
+  font-size: 11px;
+  color: #7d8494;
+  line-height: 1.7;
+  max-width: 570px;
+  margin: 0 0 13px;
+}
+.signal-workspace .settings-facts {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.signal-workspace .settings-facts span {
+  background: #f5f6f9;
+  color: #757b89;
+  font-size: 10px;
+  border-radius: 5px;
+  padding: 5px 8px;
+}
+.signal-workspace .danger-outline {
+  color: #bd5b6c;
+  border-color: #ead8dc;
+}
+.signal-workspace .settings-footnote {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  color: #9a90bd;
+  font-size: 11px;
+  margin: 20px 5px;
+}
+.signal-workspace .main-footer {
+  padding: 17px 38px;
+  border-top: 1px solid #e9ebf0;
+  display: flex;
+  justify-content: space-between;
+  color: #a8adba;
+  font-size: 10px;
+}
+.signal-workspace .modal-backdrop,
+.signal-workspace .detail-backdrop {
+  position: fixed;
+  inset: 0;
+  background: #13152599;
+  z-index: 20;
+  display: grid;
+  place-items: center;
+  padding: 20px;
+}
+.signal-workspace .modal {
+  background: white;
+  width: min(620px, 100%);
+  max-height: calc(100vh - 40px);
+  overflow: auto;
+  border-radius: 14px;
+  box-shadow: 0 24px 70px #10112655;
+}
+.signal-workspace .agent-form {
+  padding: 29px;
+}
+.signal-workspace .modal-heading {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: 25px;
+}
+.signal-workspace .modal-heading h2 {
+  font-size: 22px;
+  margin: 7px 0 5px;
+  letter-spacing: -0.7px;
+}
+.signal-workspace .modal-heading p {
+  color: #8c92a1;
+  font-size: 11px;
+  margin: 0;
+}
+.signal-workspace .modal-heading .icon-button {
+  width: 28px;
+  height: 28px;
+}
+.signal-workspace .field {
+  display: block;
+  margin-bottom: 20px;
+}
+.signal-workspace .field > span {
+  display: block;
+  font-size: 11px;
+  font-weight: 800;
+  color: #454a5a;
+  margin-bottom: 8px;
+}
+.signal-workspace .field > span b {
+  color: #ba61ab;
+  margin-left: 3px;
+}
+.signal-workspace .field > input,
+.signal-workspace .field textarea {
+  display: block;
+  width: 100%;
+  border: 1px solid #dfe2e9;
+  background: #fff;
+  border-radius: 7px;
+  padding: 10px 11px;
+  color: #333746;
+  font-size: 12px;
+  outline: none;
+}
+.signal-workspace .field > input:focus,
+.signal-workspace .field textarea:focus,
+.signal-workspace .signal-entry input:focus {
+  border-color: #9d88e9;
+}
+.signal-workspace .field textarea {
+  resize: vertical;
+  line-height: 1.6;
+}
+.signal-workspace .field small[role="alert"] {
+  color: #c74d66;
+  display: block;
+  margin-top: 5px;
+  font-size: 10px;
+}
+.signal-workspace .field em {
+  display: block;
+  color: #a3a8b4;
+  font-size: 10px;
+  font-style: normal;
+  margin-top: 6px;
+}
+.signal-workspace .precision-options {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
+}
+.signal-workspace .precision-options label {
+  display: grid;
+  grid-template-columns: 16px 1fr;
+  align-items: center;
+  gap: 3px 7px;
+  border: 1px solid #e0e2e9;
+  border-radius: 8px;
+  padding: 11px;
+  cursor: pointer;
+}
+.signal-workspace .precision-options label.selected {
+  border-color: #a28bec;
+  background: #faf8ff;
+}
+.signal-workspace .precision-options input {
+  accent-color: #7454d6;
+  margin: 0;
+}
+.signal-workspace .precision-options strong {
+  font-size: 11px;
+  color: #45495a;
+}
+.signal-workspace .precision-options span {
+  grid-column: 2;
+  font-size: 10px;
+  color: #9ba0ad;
+}
+.signal-workspace .signal-entry {
+  display: flex;
+  gap: 7px;
+}
+.signal-workspace .signal-entry select,
+.signal-workspace .signal-entry input {
+  border: 1px solid #dfe2e9;
+  border-radius: 7px;
+  padding: 9px;
+  font-size: 11px;
+  color: #515667;
+  min-width: 0;
+}
+.signal-workspace .signal-entry input {
+  flex: 1;
+}
+.signal-workspace .signal-entry .secondary-button {
+  min-height: 35px;
+}
+.signal-workspace .signal-chips {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-top: 10px;
+}
+.signal-workspace .signal-chip {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  background: #f4f1ff;
+  border: 1px solid #e5ddff;
+  color: #6148ba;
+  border-radius: 6px;
+  padding: 4px 6px;
+  font-size: 10px;
+}
+.signal-workspace .signal-chip small {
+  color: #927fc7;
+}
+.signal-workspace .signal-chip button {
+  border: 0;
+  background: transparent;
+  color: #907aba;
+  padding: 0;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .form-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  border-top: 1px solid #eff0f3;
+  padding-top: 20px;
+  margin-top: 25px;
+}
+.signal-workspace .detail-backdrop {
+  display: block;
+  padding: 0;
+}
+.signal-workspace .detail-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(420px, 100%);
+  background: white;
+  overflow: auto;
+  padding: 24px 28px;
+  box-shadow: -10px 0 50px #0f123022;
+}
+.signal-workspace .detail-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.signal-workspace .detail-person {
+  text-align: center;
+  padding: 24px 0 18px;
+  border-bottom: 1px solid #edf0f4;
+}
+.signal-workspace .avatar.large {
+  width: 60px;
+  height: 60px;
+  border-radius: 16px;
+  font-size: 25px;
+  margin: 0 auto 12px;
+}
+.signal-workspace .detail-person h2 {
+  font-size: 20px;
+  margin: 0 0 4px;
+}
+.signal-workspace .detail-person p {
+  font-size: 11px;
+  color: #8b91a1;
+  margin: 0;
+}
+.signal-workspace .detail-score {
+  padding: 20px 0;
+  border-bottom: 1px solid #edf0f4;
+}
+.signal-workspace .detail-score > span {
+  font-size: 11px;
+  color: #8e95a3;
+}
+.signal-workspace .detail-score strong {
+  display: block;
+  color: #7154d5;
+  font-size: 34px;
+  margin: 5px 0;
+}
+.signal-workspace .detail-score strong small {
+  font-size: 12px;
+  color: #a6a9b6;
+  font-weight: 500;
+}
+.signal-workspace .score-track {
+  height: 6px;
+  background: #ede9fb;
+  border-radius: 10px;
+  overflow: hidden;
+}
+.signal-workspace .score-track div {
+  height: 100%;
+  background: linear-gradient(90deg, #b49cf8, #7155d8);
+  border-radius: 10px;
+}
+.signal-workspace .detail-panel section {
+  border-bottom: 1px solid #edf0f4;
+  padding: 18px 0;
+}
+.signal-workspace .detail-panel section h3 {
+  font-size: 11px;
+  color: #4e5362;
+  margin: 0 0 8px;
+}
+.signal-workspace .detail-panel section p {
+  font-size: 11px;
+  color: #7e8594;
+  line-height: 1.65;
+  margin: 0;
+}
+.signal-workspace .detail-panel section p.muted {
+  color: #adb1bc;
+  margin-top: 5px;
+}
+.signal-workspace .source-card {
+  background: #f8f6ff;
+  border: 1px solid #eee9fd;
+  border-radius: 8px;
+  padding: 13px;
+}
+.signal-workspace .source-card .source-type {
+  font-size: 9px;
+  color: #745bcb;
+  background: #eae4fb;
+  border-radius: 4px;
+  padding: 3px 5px;
+  display: inline-block;
+  margin-bottom: 7px;
+}
+.signal-workspace .source-card strong {
+  display: block;
+  font-size: 11px;
+  color: #4d446c;
+  margin-bottom: 5px;
+}
+.signal-workspace .detail-note {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  color: #aba7ba;
+  font-size: 9px;
+  padding: 22px 0;
+}
+.signal-workspace .toast {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 40;
+  background: #252536;
+  color: white;
+  padding: 12px 14px;
+  border-radius: 8px;
+  box-shadow: 0 12px 30px #1a1b2d44;
+  display: flex;
+  gap: 15px;
+  align-items: center;
+  font-size: 11px;
+  max-width: min(400px, calc(100vw - 32px));
+}
+.signal-workspace .toast.error {
+  background: #ad4659;
+}
+.signal-workspace .toast button {
+  background: none;
+  border: 0;
+  color: #fff;
+  display: grid;
+  place-items: center;
+}
+.signal-workspace .recovery {
+  max-width: 500px;
+  margin: 80px auto;
+  background: #fff;
+  border: 1px solid #e8e9ee;
+  border-radius: 12px;
+  padding: 35px;
+  text-align: center;
+  color: #785bd8;
+}
+.signal-workspace .recovery h1 {
+  font-size: 19px;
+  color: #303446;
+}
+.signal-workspace .recovery p {
+  font-size: 12px;
+  color: #8e94a2;
+  line-height: 1.6;
+}
+.signal-workspace .mobile-menu,
+.signal-workspace .mobile-scrim {
+  display: none;
+}
+@media (max-width: 1100px) {
+  .signal-workspace .sidebar {
+    width: 210px;
+  }
+  .signal-workspace .main-content {
+    padding: 30px 24px 50px;
+  }
+  .signal-workspace .topbar {
+    padding: 0 24px;
+  }
+  .signal-workspace .agent-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .signal-workspace .hero-art {
+    right: -5%;
+  }
+}
+@media (max-width: 760px) {
+  .signal-workspace .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: 30;
+    transform: translateX(-100%);
+    transition: transform 0.2s;
+    width: 250px;
+  }
+  .signal-workspace .sidebar.open {
+    transform: translateX(0);
+  }
+  .signal-workspace .mobile-scrim {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: #14151e88;
+    border: 0;
+    z-index: 29;
+  }
+  .signal-workspace .mobile-menu {
+    display: grid;
+    width: 27px;
+    height: 27px;
+    margin-right: 3px;
+  }
+  .signal-workspace .main-content {
+    padding: 25px 17px 40px;
+  }
+  .signal-workspace .topbar {
+    height: 56px;
+    padding: 0 17px;
+  }
+  .signal-workspace .topbar-right {
+    gap: 10px;
+  }
+  .signal-workspace .top-icon {
+    display: none;
+  }
+  .signal-workspace .page-heading h1 {
+    font-size: 24px;
+  }
+  .signal-workspace .page-heading {
+    align-items: flex-start;
+  }
+  .signal-workspace .page-heading > .primary-button {
+    font-size: 0;
+    min-width: 36px;
+    width: 36px;
+    padding: 0;
+  }
+  .signal-workspace .page-heading > .primary-button svg {
+    flex: none;
+  }
+  .signal-workspace .hero-banner {
+    height: 205px;
+    padding: 26px;
+  }
+  .signal-workspace .hero-art {
+    right: -155px;
+    opacity: 0.55;
+  }
+  .signal-workspace .stats-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 9px;
+  }
+  .signal-workspace .stat-card {
+    min-height: 110px;
+    padding: 13px;
+  }
+  .signal-workspace .stat-card strong {
+    font-size: 23px;
+  }
+  .signal-workspace .agent-grid {
+    grid-template-columns: 1fr;
+  }
+  .signal-workspace .lead-row {
+    padding: 13px 10px;
+    gap: 9px;
+  }
+  .signal-workspace .lead-score {
+    min-width: 34px;
+  }
+  .signal-workspace .feedback {
+    width: 76px;
+  }
+  .signal-workspace .main-footer {
+    padding: 15px 17px;
+  }
+  .signal-workspace .filter-panel {
+    padding: 12px;
+  }
+  .signal-workspace .filter-row select {
+    flex: 1;
+    min-width: 110px;
+  }
+  .signal-workspace .modal {
+    max-height: 100vh;
+    border-radius: 0;
+  }
+  .signal-workspace .modal-backdrop {
+    padding: 0;
+  }
+  .signal-workspace .agent-form {
+    padding: 21px;
+  }
+  .signal-workspace .signal-entry {
+    flex-wrap: wrap;
+  }
+  .signal-workspace .signal-entry input {
+    min-width: 60%;
+  }
+}
+@media (max-width: 420px) {
+  .signal-workspace .demo-badge {
+    font-size: 8px;
+    padding: 5px;
+  }
+  .signal-workspace .hero-banner h2 {
+    font-size: 22px;
+  }
+  .signal-workspace .hero-banner p {
+    font-size: 10px;
+    max-width: 250px;
+  }
+  .signal-workspace .lead-person > span {
+    max-width: 150px;
+  }
+  .signal-workspace .lead-person small {
+    max-width: 150px;
+  }
+  .signal-workspace .precision-options {
+    grid-template-columns: 1fr;
+  }
+  .signal-workspace .page-count {
+    display: none;
+  }
+}
+
+.signal-workspace.embedded {
+  min-height: 100%;
+  height: auto;
+}
+.signal-workspace.embedded .sidebar,
+.signal-workspace.embedded .mobile-menu {
+  display: none;
+}
+.signal-workspace.embedded .topbar {
+  height: auto;
+  min-height: 60px;
+}
+.signal-workspace .mode-controls {
+  display: flex;
+  gap: 4px;
+  background: #f4f2fa;
+  border-radius: 7px;
+  padding: 3px;
+}
+.signal-workspace .mode-controls button,
+.signal-workspace .mode-controls a {
+  border: 0;
+  background: transparent;
+  color: #8b7faa;
+  font-size: 10px;
+  padding: 6px 9px;
+  text-decoration: none;
+  border-radius: 5px;
+}
+.signal-workspace .mode-controls .selected {
+  background: white;
+  color: #7155cf;
+  box-shadow: 0 1px 5px #2c20471a;
+}
+.signal-workspace .workspace-tabs {
+  display: flex;
+  gap: 7px;
+  margin-bottom: 22px;
+}
+.signal-workspace .workspace-tabs button {
+  border: 1px solid #e0dbee;
+  background: #fff;
+  border-radius: 7px;
+  padding: 8px 15px;
+  color: #8b7d9d;
+  font-size: 12px;
+}
+.signal-workspace .workspace-tabs .selected {
+  background: #efe9ff;
+  color: #7153d7;
+  border-color: #cdbfec;
+}
+.signal-workspace .connection-panel {
+  background: #fff8eb;
+  border: 1px solid #eedaba;
+  border-radius: 10px;
+  padding: 18px;
+  margin-bottom: 22px;
+}
+.signal-workspace .connection-panel strong {
+  font-size: 13px;
+  color: #83643b;
+}
+.signal-workspace .connection-panel p {
+  font-size: 11px;
+  color: #978064;
+  line-height: 1.6;
+  margin: 7px 0;
+}
+.signal-workspace .connection-panel small {
+  display: block;
+  font-size: 10px;
+  color: #aa906d;
+  margin: 8px 0;
+}
+.signal-workspace .connection-panel button {
+  margin: 6px 0;
+}
+.signal-workspace .detail-panel a {
+  font-size: 12px;
+  color: #7153db;
+}
+@media (max-width: 760px) {
+  .signal-workspace .topbar-right {
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+  .signal-workspace .topbar {
+    gap: 8px;
+    height: auto;
+    min-height: 65px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+  .signal-workspace .demo-badge,
+  .signal-workspace .user-avatar {
+    display: none;
+  }
+  .signal-workspace .mode-controls button,
+  .signal-workspace .mode-controls a {
+    padding: 6px;
+    font-size: 9px;
+  }
+  .signal-workspace .topbar-left {
+    font-size: 10px;
+    gap: 7px;
+  }
+}

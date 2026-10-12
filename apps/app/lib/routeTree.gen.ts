@@ -10,14 +10,21 @@
 
 import { Route as rootRouteImport } from './../routes/__root'
 import { Route as appRouteRouteImport } from './../routes/(app)/route'
+import { Route as SignalDemoRouteImport } from './../routes/signal-demo'
 import { Route as appIndexRouteImport } from './../routes/(app)/index'
 import { Route as appMembersRouteImport } from './../routes/(app)/members'
 import { Route as appSettingsRouteImport } from './../routes/(app)/settings'
+import { Route as appSignalsRouteImport } from './../routes/(app)/signals'
 import { Route as authLoginRouteImport } from './../routes/(auth)/login'
 import { Route as authSignupRouteImport } from './../routes/(auth)/signup'
 
 const appRouteRoute = appRouteRouteImport.update({
   id: '/(app)',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const SignalDemoRoute = SignalDemoRouteImport.update({
+  id: '/signal-demo',
+  path: '/signal-demo',
   getParentRoute: () => rootRouteImport,
 } as any)
 const appIndexRoute = appIndexRouteImport.update({
@@ -35,6 +42,11 @@ const appSettingsRoute = appSettingsRouteImport.update({
   path: '/settings',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appSignalsRoute = appSignalsRouteImport.update({
+  id: '/signals',
+  path: '/signals',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const authLoginRoute = authLoginRouteImport.update({
   id: '/(auth)/login',
   path: '/login',
@@ -47,15 +59,19 @@ const authSignupRoute = authSignupRouteImport.update({
 } as any)
 
 export interface FileRoutesByFullPath {
+  '/signal-demo': typeof SignalDemoRoute
   '/members': typeof appMembersRoute
   '/settings': typeof appSettingsRoute
+  '/signals': typeof appSignalsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
 }
 export interface FileRoutesByTo {
+  '/signal-demo': typeof SignalDemoRoute
   '/members': typeof appMembersRoute
   '/settings': typeof appSettingsRoute
+  '/signals': typeof appSignalsRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
@@ -63,22 +79,40 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
+  '/signal-demo': typeof SignalDemoRoute
   '/(app)/members': typeof appMembersRoute
   '/(app)/settings': typeof appSettingsRoute
+  '/(app)/signals': typeof appSignalsRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(app)/': typeof appIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/members' | '/settings' | '/login' | '/signup' | '/'
+  fullPaths:
+    | '/signal-demo'
+    | '/members'
+    | '/settings'
+    | '/signals'
+    | '/login'
+    | '/signup'
+    | '/'
   fileRoutesByTo: FileRoutesByTo
-  to: '/members' | '/settings' | '/login' | '/signup' | '/'
+  to:
+    | '/signal-demo'
+    | '/members'
+    | '/settings'
+    | '/signals'
+    | '/login'
+    | '/signup'
+    | '/'
   id:
     | '__root__'
     | '/(app)'
+    | '/signal-demo'
     | '/(app)/members'
     | '/(app)/settings'
+    | '/(app)/signals'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(app)/'
@@ -86,6 +120,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   appRouteRoute: typeof appRouteRouteWithChildren
+  SignalDemoRoute: typeof SignalDemoRoute
   authLoginRoute: typeof authLoginRoute
   authSignupRoute: typeof authSignupRoute
 }
@@ -97,6 +132,13 @@ declare module '@tanstack/react-router' {
       path: ''
       fullPath: ''
       preLoaderRoute: typeof appRouteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/signal-demo': {
+      id: '/signal-demo'
+      path: '/signal-demo'
+      fullPath: '/signal-demo'
+      preLoaderRoute: typeof SignalDemoRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/(app)/': {
@@ -120,6 +162,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appSettingsRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/signals': {
+      id: '/(app)/signals'
+      path: '/signals'
+      fullPath: '/signals'
+      preLoaderRoute: typeof appSignalsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(auth)/login': {
       id: '/(auth)/login'
       path: '/login'
@@ -140,12 +189,14 @@ declare module '@tanstack/react-router' {
 interface appRouteRouteChildren {
   appMembersRoute: typeof appMembersRoute
   appSettingsRoute: typeof appSettingsRoute
+  appSignalsRoute: typeof appSignalsRoute
   appIndexRoute: typeof appIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
   appMembersRoute: appMembersRoute,
   appSettingsRoute: appSettingsRoute,
+  appSignalsRoute: appSignalsRoute,
   appIndexRoute: appIndexRoute,
 }
 
@@ -155,6 +206,7 @@ const appRouteRouteWithChildren = appRouteRoute._addFileChildren(
 
 const rootRouteChildren: RootRouteChildren = {
   appRouteRoute: appRouteRouteWithChildren,
+  SignalDemoRoute: SignalDemoRoute,
   authLoginRoute: authLoginRoute,
   authSignupRoute: authSignupRoute,
 }
