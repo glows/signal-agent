@@ -1,12 +1,15 @@
+import { user, identity } from "@repo/db";
 import { createTestDatabase } from "@repo/db/testing";
-import { afterAll, describe, expect, it, vi } from "vitest";
+import { afterAll, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { TRPCContext } from "../lib/context";
 import { createCallerFactory } from "../lib/trpc";
-import { signalsRouter, xConnection } from "./signals";
+import { xOAuthConnection } from "../services/x-oauth";
+import { signalsRouter } from "./signals";
 
 const database = await createTestDatabase();
 afterAll(database.close);
+beforeEach(database.reset);
 const createCaller = createCallerFactory(signalsRouter);
 function context(signedIn: boolean): TRPCContext {
   const now = new Date();
@@ -42,62 +45,81 @@ function context(signedIn: boolean): TRPCContext {
       BETTER_AUTH_SECRET: "0".repeat(32),
       RESEND_API_KEY: "unused",
       RESEND_EMAIL_FROM: "test@example.com",
-      X_BEARER_TOKEN: "secret",
+      TWITTER_CLIENT_ID: "client",
+      TWITTER_CLIENT_SECRET: "secret",
     },
   };
 }
 
-describe("real X access configuration", () => {
-  it("requires an explicit user allowlist even when a token exists", () => {
-    expect(xConnection({ X_BEARER_TOKEN: "secret" }, "user-1").allowed).toBe(
-      false,
-    );
-    expect(
-      xConnection(
-        { X_BEARER_TOKEN: "secret", X_ALLOWED_USER_IDS: "user-1, user-2" },
-        "user-1",
-      ),
-    ).toEqual({
-      configured: true,
-      allowed: true,
-      userId: "user-1",
-      maxPostsPerRun: 30,
+describe("per-user OAuth connection", () => {
+  it("isolates identities and never returns tokens", async () => {
+    await database.db.insert(user).values([
+      { id: "u", name: "A", email: "a@example.com" },
+      { id: "v", name: "B", email: "b@example.com" },
+    ]);
+    await database.db.insert(identity).values({
+      id: "x-b",
+      userId: "v",
+      providerId: "twitter",
+      accountId: "other-x",
+      accessToken: "secret-other",
+      refreshToken: "refresh-other",
+      scope: "tweet.read,users.read,list.read,offline.access",
     });
-  });
-  it("returns readiness but never the token", () => {
-    expect(
-      JSON.stringify(
-        xConnection({ X_BEARER_TOKEN: "secret", X_ALLOWED_USER_IDS: "u" }, "u"),
-      ),
-    ).not.toContain("secret");
-    expect(xConnection({}, "u").configured).toBe(false);
-  });
-  it("caps the configured read count", () => {
-    expect(xConnection({ X_MAX_POSTS_PER_RUN: 1000 }, "u").maxPostsPerRun).toBe(
-      100,
+    const caller = createCaller(context(true));
+    expect((await caller.connection()).connected).toBe(false);
+    expect((await caller.disconnect()).disconnected).toBe(true);
+    expect((await database.db.query.identity.findFirst())?.accountId).toBe(
+      "other-x",
     );
-    expect(
-      xConnection({ X_MAX_POSTS_PER_RUN: Number.NaN }, "u").maxPostsPerRun,
-    ).toBe(30);
+    await database.db.insert(identity).values({
+      id: "x-a",
+      userId: "u",
+      providerId: "twitter",
+      accountId: "my-x",
+      accessToken: "secret-mine",
+      refreshToken: "refresh-mine",
+      scope: "tweet.read,users.read,list.read,offline.access",
+    });
+    const status = await caller.connection();
+    expect(status.allowed).toBe(true);
+    expect(status.xAccountId).toBe("my-x");
+    expect(JSON.stringify(status)).not.toContain("secret");
   });
-  it("rejects unauthenticated reads and disallowed paid runs before fetching X", async () => {
+  it("requires complete scopes and a refresh grant", async () => {
+    await database.db
+      .insert(user)
+      .values({ id: "u", name: "A", email: "a@example.com" });
+    await database.db.insert(identity).values({
+      id: "x-a",
+      userId: "u",
+      providerId: "twitter",
+      accountId: "my-x",
+      accessToken: "secret",
+      scope: "tweet.read,users.read",
+    });
+    const status = await xOAuthConnection(context(true), "u");
+    expect(status.allowed).toBe(false);
+    expect(status.missingScopes).toContain("offline.access");
+  });
+  it("rejects unauthenticated reads and unconnected runs before X is fetched", async () => {
     await expect(
       createCaller(context(false)).connection(),
     ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
-    const fetchSpy = vi.spyOn(globalThis, "fetch");
+    const spy = vi.spyOn(globalThis, "fetch");
     try {
       await expect(
         createCaller(context(true)).discover({
-          id: "agent",
+          id: "a",
           name: "Sales",
           icpDescription: "SaaS",
           precisionMode: "standard",
           signals: [{ type: "keyword", value: "AI" }],
         }),
-      ).rejects.toMatchObject({ code: "FORBIDDEN" });
-      expect(fetchSpy).not.toHaveBeenCalled();
+      ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      expect(spy).not.toHaveBeenCalled();
     } finally {
-      fetchSpy.mockRestore();
+      spy.mockRestore();
     }
   });
 });

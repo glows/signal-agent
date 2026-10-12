@@ -6,7 +6,15 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { SignalWorkspace } from "./workspace";
 
-const calls = vi.hoisted(() => ({ connection: vi.fn(), discover: vi.fn() }));
+const calls = vi.hoisted(() => ({
+  connection: vi.fn(),
+  discover: vi.fn(),
+  linkSocial: vi.fn(),
+  signIn: vi.fn(),
+}));
+vi.mock("#lib/auth", () => ({
+  auth: { linkSocial: calls.linkSocial, signIn: { social: calls.signIn } },
+}));
 vi.mock("#lib/trpc", () => ({
   trpcClient: {
     signals: {
@@ -23,6 +31,8 @@ vi.mock("@tanstack/react-router", () => ({
 
 beforeEach(() => {
   localStorage.clear();
+  calls.linkSocial.mockReset().mockResolvedValue({ data: { redirect: true } });
+  calls.signIn.mockReset().mockResolvedValue({ data: { redirect: true } });
   calls.connection.mockReset().mockResolvedValue({
     configured: true,
     allowed: true,
@@ -93,6 +103,27 @@ async function createLiveAgent() {
 }
 
 describe("real data workflow", () => {
+  it("starts user OAuth linking without accepting a token in the browser", async () => {
+    calls.connection.mockResolvedValue({
+      configured: true,
+      allowed: false,
+      connected: false,
+      userId: "user-a",
+      maxPostsPerRun: 30,
+    });
+    const user = userEvent.setup();
+    render(
+      <QueryClientProvider client={new QueryClient()}>
+        <SignalWorkspace userId="user-a" />
+      </QueryClientProvider>,
+    );
+    await user.click(await screen.findByRole("button", { name: "连接 X" }));
+    expect(calls.linkSocial).toHaveBeenCalledWith({
+      provider: "twitter",
+      callbackURL: `${window.location.origin}/signals`,
+    });
+    expect(calls.discover).not.toHaveBeenCalled();
+  });
   it("runs the backend connector, preserves feedback and isolates demo data", async () => {
     const user = await createLiveAgent();
     await user.click(screen.getByRole("button", { name: "运行一次" }));

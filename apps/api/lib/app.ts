@@ -93,6 +93,7 @@ app.use("/api/trpc/*", (c) => {
         resHeaders,
         info,
         env: c.env,
+        auth,
         db,
         dbCached,
         session: sessionData?.session ?? null,

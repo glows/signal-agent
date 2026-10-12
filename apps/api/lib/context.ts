@@ -6,6 +6,7 @@ import type { Env } from "./env.js";
 
 /** Per-request context for every tRPC procedure. */
 export type TRPCContext = {
+  auth?: Auth;
   req: Request;
 
   /** tRPC request metadata (headers, connection info) */

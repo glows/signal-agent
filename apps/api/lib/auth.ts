@@ -35,6 +35,8 @@ export type AuthEnv = Pick<
   | "BETTER_AUTH_SECRET"
   | "GOOGLE_CLIENT_ID"
   | "GOOGLE_CLIENT_SECRET"
+  | "TWITTER_CLIENT_ID"
+  | "TWITTER_CLIENT_SECRET"
   | "RESEND_API_KEY"
   | "RESEND_EMAIL_FROM"
   | "STRIPE_SECRET_KEY"
@@ -75,8 +77,23 @@ function googleProvider(env: AuthEnv) {
  * call that configures Better Auth, so the button and the provider cannot
  * disagree – a separate flag would eventually drift from the credentials.
  */
+export function socialProviders(env: AuthEnv) {
+  const clientId = env.TWITTER_CLIENT_ID;
+  const clientSecret = env.TWITTER_CLIENT_SECRET;
+  if (Boolean(clientId) !== Boolean(clientSecret))
+    throw new Error(
+      "X OAuth needs both TWITTER_CLIENT_ID and TWITTER_CLIENT_SECRET.",
+    );
+  return {
+    ...googleProvider(env),
+    ...(clientId && clientSecret
+      ? { twitter: { clientId, clientSecret, scope: ["list.read"] } }
+      : {}),
+  };
+}
+
 export function configuredSocialProviders(env: AuthEnv): string[] {
-  return Object.keys(googleProvider(env));
+  return Object.keys(socialProviders(env));
 }
 
 /**
@@ -214,6 +231,8 @@ export function createAuth(db: Database, env: AuthEnv): Auth {
 
     account: {
       modelName: "identity",
+      encryptOAuthTokens: true,
+      accountLinking: { allowDifferentEmails: true },
     },
 
     // Email and password authentication
@@ -232,7 +251,7 @@ export function createAuth(db: Database, env: AuthEnv): Auth {
     },
 
     // OAuth providers
-    socialProviders: googleProvider(env),
+    socialProviders: socialProviders(env),
 
     plugins: [
       anonymous(),

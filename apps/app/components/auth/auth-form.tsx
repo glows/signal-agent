@@ -9,6 +9,7 @@ import { GoogleLogin } from "./google-login";
 import { OtpVerification } from "./otp-verification";
 import { PasskeyLogin } from "./passkey-login";
 import { useAuthForm } from "./use-auth-form";
+import { XLogin } from "./x-login";
 
 const APP_NAME = import.meta.env.VITE_APP_NAME;
 
@@ -153,6 +154,14 @@ function MethodSelection({
       <h1 className="text-2xl font-bold text-center">{heading}</h1>
 
       <div className="flex flex-col gap-3">
+        {socialProviders.includes("twitter") && (
+          <XLogin
+            onError={onError}
+            isDisabled={isDisabled}
+            onLoadingChange={onLoadingChange}
+            returnTo={returnTo}
+          />
+        )}
         {socialProviders.includes("google") && (
           <GoogleLogin
             onError={onError}

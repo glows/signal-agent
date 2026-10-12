@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
+import { auth } from "#lib/auth";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
 import { trpcClient } from "#lib/trpc";
 
@@ -62,7 +63,7 @@ export function SignalWorkspace({
   userId,
   embedded = false,
 }: { userId?: string; embedded?: boolean } = {}) {
-  const [mode, setMode] = useState<"demo" | "x">("demo");
+  const [mode, setMode] = useState<"demo" | "x">(userId ? "x" : "demo");
   const storageKey =
     mode === "demo" ? "signal-agent-demo-v1" : `signal-agent-x-v1:${userId}`;
   const connection = useQuery({
@@ -79,7 +80,9 @@ export function SignalWorkspace({
   });
   const [loaded] = useState(() => {
     try {
-      return loadData(window.localStorage);
+      return mode === "x"
+        ? loadData(window.localStorage, storageKey, emptyLiveData)
+        : loadData(window.localStorage);
     } catch {
       return {
         data: null,
@@ -123,6 +126,37 @@ export function SignalWorkspace({
   function notify(text: string, kind: "success" | "error" = "success") {
     setToast({ text, kind });
     window.setTimeout(() => setToast(null), 4500);
+  }
+
+  async function connectX() {
+    try {
+      const request = {
+        provider: "twitter" as const,
+        callbackURL: `${window.location.origin}/signals`,
+      };
+      const result = connection.data?.connected
+        ? await auth.signIn.social(request)
+        : await auth.linkSocial(request);
+      if (result.error)
+        notify(result.error.message || "X 授权启动失败", "error");
+    } catch {
+      notify("X 授权启动失败，请检查后端配置", "error");
+    }
+  }
+
+  async function disconnectX() {
+    if (!window.confirm("断开当前 X 授权连接？")) return;
+    try {
+      const result = await trpcClient.signals.disconnect.mutate();
+      await connection.refetch();
+      notify(
+        result.revoked
+          ? "X 连接已断开，授权已撤销"
+          : "本地连接已断开。请在 X 设置中确认撤销应用授权。",
+      );
+    } catch (error) {
+      notify(error instanceof Error ? error.message : "断开失败", "error");
+    }
   }
 
   function commit(next: AppData) {
@@ -528,10 +562,30 @@ export function SignalWorkspace({
                 <p>
                   {canRun
                     ? `单次最多读取 ${connection.data?.maxPostsPerRun} 条帖子，点击运行会消耗 X API 额度。`
-                    : "请在后端 .env.local 配置 X_BEARER_TOKEN，并将下方账号 ID 加入 X_ALLOWED_USER_IDS。"}
+                    : connection.data?.configured
+                      ? "点击连接 X，授权帖子、用户、列表读取和持续访问。"
+                      : "请在后端 .env.local 配置 TWITTER_CLIENT_ID 和 TWITTER_CLIENT_SECRET。"}
                 </p>
               )}
               <small>账号 ID：{userId} · 凭证仅保存在服务端</small>
+              {connection.data?.configured && (
+                <button
+                  className="primary-button"
+                  disabled={Boolean(runningId)}
+                  onClick={() => void connectX()}
+                >
+                  {connection.data.connected ? "重新授权 X" : "连接 X"}
+                </button>
+              )}
+              {connection.data?.connected && (
+                <button
+                  className="secondary-button"
+                  disabled={Boolean(runningId)}
+                  onClick={() => void disconnectX()}
+                >
+                  断开 X 连接
+                </button>
+              )}
               <button
                 className="secondary-button"
                 onClick={() => void connection.refetch()}
