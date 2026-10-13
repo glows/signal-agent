@@ -20,7 +20,7 @@ export function LeadList({ leads, agents, onFeedback, onOpen }: Props) {
           <Search size={24} />
         </span>
         <h3>还没有符合条件的线索</h3>
-        <p>调整筛选条件，或运行一个活跃的 Agent 来发现模拟线索。</p>
+        <p>调整筛选条件，或运行一个活跃的 Agent 来发现线索。</p>
       </div>
     );
   return (
@@ -41,6 +41,7 @@ export function LeadList({ leads, agents, onFeedback, onOpen }: Props) {
               · {label[lead.provenance.signalType]}：
               {lead.provenance.interaction}
             </small>
+            <p className="lead-reason">{lead.rationale}</p>
           </div>
           <div className="lead-score">
             <strong>{lead.score}</strong>

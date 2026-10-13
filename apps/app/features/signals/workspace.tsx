@@ -405,17 +405,17 @@ export function SignalWorkspace({
           <Activity size={20} strokeWidth={2.5} />
         </span>
         <div>
-          <strong>
-            signal<span>flow</span>
-          </strong>
+          <strong>Signal Agent</strong>
           <small>AGENT WORKSPACE</small>
         </div>
       </div>
       <div className="workspace-switch">
         <span className="workspace-avatar">D</span>
         <div>
-          <strong>Demo Workspace</strong>
-          <small>本地演示环境</small>
+          <strong>{mode === "demo" ? "演示工作台" : "X 数据工作台"}</strong>
+          <small>
+            {mode === "demo" ? "虚构数据 · 本地保存" : "授权数据 · 本地保存"}
+          </small>
         </div>
         <ChevronDown size={15} />
       </div>
@@ -456,8 +456,12 @@ export function SignalWorkspace({
       <div className="sidebar-spacer" />
       <div className="sidebar-callout">
         <Sparkles size={18} />
-        <strong>本地功能演示</strong>
-        <p>使用虚构数据体验从监测到筛选线索的完整流程。</p>
+        <strong>{mode === "demo" ? "先体验，再连接" : "带着依据判断"}</strong>
+        <p>
+          {mode === "demo"
+            ? "使用虚构数据体验从监测到筛选线索的完整流程。"
+            : "手动运行发现，查看原始讨论和匹配理由，再决定联系谁。"}
+        </p>
       </div>
       <div className="sidebar-footer">
         <CircleHelp size={16} /> 所有数据仅存于当前浏览器
@@ -639,7 +643,7 @@ export function SignalWorkspace({
                         找到真正的信号。
                       </h2>
                       <p>
-                        设置监测条件，运行一次模拟发现，查看每条线索背后的匹配理由。
+                        设置监测条件，运行一次发现，查看每条线索背后的匹配理由。
                       </p>
                       <button onClick={() => navigate("agents")}>
                         探索 Signal Agents <ArrowRight size={17} />
