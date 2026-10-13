@@ -33,6 +33,8 @@ const APP_PATHS = [
   "login",
   "members",
   "settings",
+  "signal-demo",
+  "signals",
   "signup",
 ] as const;
 

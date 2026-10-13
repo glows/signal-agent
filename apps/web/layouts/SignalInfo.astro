@@ -1,0 +1,6 @@
+---
+interface Props { title: string }
+const { title } = Astro.props;
+---
+<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>{title}｜Signal Agent</title><link rel="icon" href="/signal-mark.svg"/></head><body><main><a href="/">← 返回 Signal Agent</a><h1>{title}</h1><slot /></main></body></html>
+<style is:global>body{margin:0;background:#fafbf8;color:#181818;font-family:Manrope,sans-serif}main{max-width:680px;margin:80px auto;padding:24px}h1{font-size:36px;line-height:40px;font-weight:600}p{font-size:16px;line-height:24px;color:#666;text-wrap:pretty}a{color:#278351}a:focus-visible{outline:2px solid #278351;outline-offset:4px}@media(max-width:760px){main{margin:32px auto}}</style>

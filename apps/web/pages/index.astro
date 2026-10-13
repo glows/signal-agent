@@ -1,162 +1,86 @@
 ---
-import BaseLayout from '#layouts/BaseLayout.astro';
-import { Button, Card, CardContent, CardDescription, CardHeader, CardTitle } from '@repo/ui';
-
-const features = [
-  {
-    title: "⚡ Fast by Default",
-    description: "Static marketing pages and a code-split SPA, cached at the edge",
-    content: "Astro prerenders the marketing site, Vite splits the app per route, and Cloudflare serves both."
-  },
-  {
-    title: "🎨 Modern UI",
-    description: "Beautiful components with ShadCN UI and Tailwind CSS",
-    content: "Pre-built components following modern design principles and accessibility standards."
-  },
-  {
-    title: "🚀 Developer Experience",
-    description: "TypeScript, hot reload, and excellent tooling",
-    content: "Full TypeScript support with Vite, TanStack Router, and modern development tools."
-  },
-  {
-    title: "📱 Full-Stack",
-    description: "tRPC API with PostgreSQL and authentication",
-    content: "Complete backend solution with type-safe APIs and database integration."
-  },
-  {
-    title: "🔧 Configurable",
-    description: "Monorepo structure with workspace management",
-    content: "Organized codebase with separate app, API, edge, and database workspaces."
-  },
-  {
-    title: "☁️ Serverless Ready",
-    description: "Deploy to edge locations worldwide",
-    content: "Built for Cloudflare Workers with global distribution and automatic scaling."
-  }
-];
-
-const technologies = [
-  "React 19", "TypeScript", "Astro", "TanStack Router",
-  "ShadCN UI", "Tailwind CSS", "Bun", "Hono",
-  "tRPC", "PostgreSQL", "Cloudflare", "Jotai"
+const appOrigin = import.meta.env.DEV ? 'http://127.0.0.1:5174' : '';
+const demoUrl = `${appOrigin}/signal-demo`;
+const faqs = [
+ ['需要登录吗？', '演示无需登录，使用虚构数据。查询真实 X 数据需要登录并授权你的 X 账号。'],
+ ['支持哪些监测来源？', '你可以添加关键词、X 账号或列表，围绕自己的理想客户画像发现线索。'],
+ ['匹配分数如何计算？', '当前版本使用规则评分，并展示匹配理由。分数帮助你排序，不能替代你对需求的判断。'],
+ ['会自动发帖或私信吗？', '不会。你查看原始帖子和匹配依据，自己决定是否联系对方。'],
+ ['授权后还需要付费吗？', 'OAuth 授权允许应用访问数据。X API 读取费用独立计费，需要开发者账户有可用额度。'],
+ ['会持续后台监测吗？', '当前由你手动运行发现。线索和处理状态保存在当前浏览器中，暂不支持跨设备同步。'],
 ];
 ---
-
-<BaseLayout>
-  <!-- Hero Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-b from-background to-muted/20">
-    <div class="container mx-auto text-center">
-      <h1 class="text-4xl sm:text-5xl lg:text-6xl font-bold tracking-tight mb-6">
-        React Starter Kit
-      </h1>
-      <p class="text-xl text-muted-foreground mb-8 max-w-3xl mx-auto">
-        Modern full-stack web application template optimized for serverless
-        deployment to CDN edge locations. Built with React, TypeScript, and
-        the latest web technologies.
-      </p>
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" asChild>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Get Started
-          </a>
-        </Button>
-        <Button variant="outline" size="lg" asChild>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            View on GitHub
-          </a>
-        </Button>
-      </div>
+<!doctype html>
+<html lang="zh-CN">
+<head>
+ <meta charset="UTF-8" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+ <title>Signal Agent｜在 X 上发现潜在线索</title>
+ <meta name="description" content="根据关键词、账号和列表发现 X 上的潜在线索。查看匹配理由与来源帖子，让每次联系都有依据。" />
+ <meta property="og:title" content="Signal Agent｜找到值得开始的对话" />
+ <meta property="og:description" content="从公开讨论中发现需求，查看依据，再决定联系谁。" />
+ <meta property="og:type" content="website" /><meta property="og:image" content={new URL('/signal-share.svg', Astro.url)} />
+ <meta name="twitter:card" content="summary_large_image" />
+ <link rel="icon" href="/signal-mark.svg" type="image/svg+xml" />
+ <link rel="preconnect" href="https://fonts.googleapis.com" /><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+ <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700&display=swap" rel="stylesheet" />
+</head>
+<body>
+ <a class="skip" href="#main">跳至主要内容</a>
+ <header class="island">
+  <a class="brand" href="/" aria-current="page"><span class="mark" aria-hidden="true">◉</span> Signal Agent</a>
+  <nav class="desktop" aria-label="主要导航"><a href="#benefits">为什么使用</a><a href="#workflow">工作流程</a><a href="#faq">常见问题</a></nav>
+  <a class="nav-login" href={`${appOrigin}/signals`}>进入工作台 ↗</a>
+  <button id="menu-toggle" aria-label="打开导航" aria-expanded="false" aria-controls="mobile-menu"><span></span><span></span></button>
+ </header>
+ <nav id="mobile-menu" aria-label="移动导航" hidden><a href="#benefits">为什么使用</a><a href="#workflow">工作流程</a><a href="#faq">常见问题</a><a href={`${appOrigin}/signals`}>进入工作台 ↗</a></nav>
+ <main id="main">
+  <section class="hero wrap">
+   <div class="hero-copy reveal"><p class="eyebrow"><span class="dot"></span> 从讨论中发现机会</p>
+    <h1>在 X 上找到<br />正在表达需求的人。</h1>
+    <p class="intro">根据关键词、账号和列表发现潜在线索。<br class="desktop" />查看匹配理由和原始帖子，再决定联系谁。</p>
+    <a class="button" href={demoUrl}>体验线索发现 <span aria-hidden="true">↗</span></a>
+    <p class="fine">无需登录 · 演示使用虚构数据</p>
+   </div>
+   <div class="workspace reveal" aria-label="Signal Agent 线索面板示例，以下内容均为虚构演示">
+    <div class="workspace-top"><span><span class="dot"></span> 创业者需求监测</span><span class="badge">演示预览</span></div>
+    <div class="workspace-body">
+     <aside class="sources"><p class="label">监测信号</p><span class="source selected">⌕ 需要 CRM</span><span class="source">@ 创业者账号</span><span class="source">☷ SaaS 创业列表</span><div class="source-note"><span class="dot"></span> 由你手动运行<br />保留来源与匹配依据</div></aside>
+     <div class="leads"><div class="lead-heading"><h2>值得关注的线索</h2><span>匹配度 ↓</span></div>
+      <article class="lead"><div class="person"><span class="avatar lilac">林</span><div><strong>林雨桐</strong><small>@yutong_builds · 演示账号</small></div><span class="score">92<small>匹配度</small></span></div><p>团队刚开始做销售，想找一个轻量的 CRM。大家都在用什么？</p><div class="reason"><span>需求信号</span> 正在寻找客户管理工具</div></article>
+      <article class="lead"><div class="person"><span class="avatar peach">M</span><div><strong>Maya Chen</strong><small>@maya_makes · 演示账号</small></div><span class="score">86<small>匹配度</small></span></div><p>客户信息分散在表格和聊天里，有没有适合小团队的整理方式？</p><div class="reason"><span>问题信号</span> 客户信息分散，符合团队画像</div></article>
+      <div class="panel-foot"><span>每一条线索，都有迹可循。</span><span>↗</span></div>
+     </div>
     </div>
+   </div>
+   <div class="hero-bottom"><span>为独立开发者、创业者和小型销售团队设计</span><span>关键词 / 账号 / 列表</span></div>
   </section>
-
-  <!-- Features Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8">
-    <div class="container mx-auto">
-      <div class="text-center mb-16">
-        <h2 class="text-3xl font-bold tracking-tight mb-4">
-          Everything you need to build modern web apps
-        </h2>
-        <p class="text-muted-foreground text-lg max-w-2xl mx-auto">
-          React Starter Kit provides a solid foundation with best practices,
-          modern tooling, and optimized performance out of the box.
-        </p>
-      </div>
-
-      <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        {features.map((feature) => (
-          <Card>
-            <CardHeader>
-              <CardTitle>{feature.title}</CardTitle>
-              <CardDescription>{feature.description}</CardDescription>
-            </CardHeader>
-            <CardContent>
-              <p class="text-sm text-muted-foreground">{feature.content}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-    </div>
+  <section id="benefits" class="wrap section reveal"><div class="section-head"><p class="eyebrow">把注意力放在值得联系的人身上</p><h2>从一片信息流，<br />到一个清晰的下一步。</h2><p>先看需求和上下文，再开始一段有意义的对话。</p></div>
+   <div class="benefits"><article><span class="index">01 / 发现</span><h3>找到正在发生的需求</h3><p>围绕你的客户画像设置监测信号，从相关帖子中发现值得进一步了解的人。</p></article><article><span class="index">02 / 理解</span><h3>知道为什么匹配</h3><p>查看匹配理由、账号信息和来源帖子。带着上下文判断，而不是只看一个分数。</p></article><article><span class="index">03 / 整理</span><h3>保留你的处理进度</h3><p>收藏、标记或忽略线索，在当前浏览器中保存判断，让下次查看更有方向。</p></article></div>
   </section>
-
-  <!-- Tech Stack Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8 bg-muted/20">
-    <div class="container mx-auto text-center">
-      <h2 class="text-3xl font-bold tracking-tight mb-4">
-        Built with Modern Technologies
-      </h2>
-      <p class="text-muted-foreground text-lg mb-12 max-w-2xl mx-auto">
-        Carefully selected technologies that work together seamlessly
-      </p>
-
-      <div class="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-8">
-        {technologies.map((tech) => (
-          <div class="p-4 rounded-lg bg-background border">
-            <span class="font-medium">{tech}</span>
-          </div>
-        ))}
-      </div>
-    </div>
-  </section>
-
-  <!-- CTA Section -->
-  <section class="py-20 px-4 sm:px-6 lg:px-8">
-    <div class="container mx-auto text-center">
-      <h2 class="text-3xl font-bold tracking-tight mb-4">
-        Ready to start building?
-      </h2>
-      <p class="text-muted-foreground text-lg mb-8 max-w-2xl mx-auto">
-        Get started with React Starter Kit today and build your next project
-        with confidence.
-      </p>
-
-      <div class="flex flex-col sm:flex-row gap-4 justify-center">
-        <Button size="lg" asChild>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Clone Repository
-          </a>
-        </Button>
-        <Button variant="outline" size="lg" asChild>
-          <a
-            href="https://github.com/kriasoft/react-starter-kit#readme"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Read Documentation
-          </a>
-        </Button>
-      </div>
-    </div>
-  </section>
-</BaseLayout>
+  <section class="tagline wrap" aria-label="找到值得开始的对话，让每次联系都有依据"><p>{['找到','值得','开始的','对话。'].map(word => <span>{word}</span>)}<br />{['让','每次','联系','都有','依据。'].map(word => <span>{word}</span>)}</p><span class="tagline-note">少一点漫无目的，多一点真实连接。</span></section>
+  <section id="workflow" class="section wrap reveal"><div class="section-head"><p class="eyebrow">一个简单的工作流程</p><h2>你定义方向，<br />Signal Agent 帮你缩小范围。</h2></div><div class="steps"><article><span class="step">1</span><h3>描述你的理想客户</h3><p>写下你想帮助谁，以及他们可能面对的问题。</p></article><article><span class="step">2</span><h3>选择关注的信号</h3><p>添加关键词、账号或列表，让搜索围绕真实需求展开。</p></article><article><span class="step">3</span><h3>查看并筛选线索</h3><p>运行发现，阅读匹配理由和原帖，保留值得跟进的人。</p></article></div></section>
+  <section class="evidence wrap reveal"><div><p class="eyebrow">判断有依据</p><h2>分数只是起点。<br />原始讨论才是上下文。</h2><p>真实数据模式保留来源帖子的链接。你可以回到 X 查看完整讨论，确认需求是否与你的产品相关。</p><p class="fine">右侧为虚构示例，不代表真实用户或实际效果。</p></div><article class="evidence-card"><span class="badge">匹配依据 · 演示</span><h3>为什么值得进一步了解？</h3><ul><li><span>✓</span> 提到了正在寻找 CRM</li><li><span>✓</span> 小型团队符合目标画像</li><li><span>✓</span> 原帖包含明确的工具需求</li></ul><div class="quote">“想找一个轻量的 CRM。<br />大家都在用什么？”</div><p class="fine">来源：关键词「需要 CRM」</p></article></section>
+  <section id="faq" class="section wrap reveal"><div class="section-head"><p class="eyebrow">开始之前</p><h2>你可能想知道。</h2></div><div class="faq">{faqs.map(([question, answer]) => <details><summary>{question}<span aria-hidden="true">+</span></summary><p>{answer}</p></details>)}</div></section>
+  <section class="final wrap reveal"><span class="dot"></span><h2>下一段值得开始的对话，<br />从一个信号开始。</h2><p>先体验完整的线索发现流程，再决定连接真实 X 数据。</p><a class="button" href={demoUrl}>体验线索发现 <span aria-hidden="true">↗</span></a><p class="fine">无需登录 · 不会请求 X 数据或产生 API 费用</p></section>
+ </main>
+ <footer class="wrap"><a class="brand" href="/"><span class="mark">◉</span> Signal Agent</a><span>发现需求，让联系有依据。</span><div><a href="/privacy">隐私说明</a><a href="/terms">使用说明</a></div><small>© {new Date().getFullYear()} Signal Agent</small></footer>
+ <script>
+  const toggle = document.querySelector<HTMLButtonElement>('#menu-toggle');
+  const menu = document.querySelector<HTMLElement>('#mobile-menu');
+  function closeMenu() { if (menu && toggle) { menu.hidden = true; toggle.setAttribute('aria-expanded', 'false'); document.body.classList.remove('menu-open'); } }
+  toggle?.addEventListener('click', () => { if (!menu) return; const open = toggle.getAttribute('aria-expanded') !== 'true'; toggle.setAttribute('aria-expanded', String(open)); menu.hidden = !open; document.body.classList.toggle('menu-open', open); });
+  menu?.querySelectorAll('a').forEach(link => link.addEventListener('click', closeMenu));
+  document.addEventListener('keydown', event => { if (event.key === 'Escape') { closeMenu(); toggle?.focus(); } });
+  if (!matchMedia('(prefers-reduced-motion: reduce)').matches) {
+   const observer = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('visible'); observer.unobserve(entry.target); } }), { threshold: 0.08 });
+   document.querySelectorAll('.reveal').forEach(el => { el.classList.add('animate'); observer.observe(el); });
+   const words = document.querySelectorAll<HTMLElement>('.tagline p span');
+   const wordObserver = new IntersectionObserver(entries => entries.forEach(entry => { if (entry.isIntersecting) { entry.target.classList.add('lit'); wordObserver.unobserve(entry.target); } }), { rootMargin: '0px 0px -20% 0px' });
+   words.forEach((word, index) => { word.style.transitionDelay = `${index * 100}ms`; wordObserver.observe(word); });
+  }
+ </script>
+ <style is:global>
+  :root{font-family:Manrope,sans-serif;color:#181818;background:#fafbf8;--ease:cubic-bezier(.32,.72,0,1)}*{box-sizing:border-box}body{margin:0}a{color:inherit;text-decoration:none}button{font:inherit}p{line-height:1.5;text-wrap:pretty}h1,h2,h3{font-weight:600;text-wrap:balance}h1,h2,p{margin-top:0}a,button,summary{transition:background .7s var(--ease),transform .7s var(--ease),color .7s var(--ease)}a:focus-visible,button:focus-visible,summary:focus-visible{outline:2px solid #21754c;outline-offset:4px}a:active,button:active{transform:scale(.98)}.wrap{max-width:1200px;margin:auto;padding-left:32px;padding-right:32px}.island{position:relative;z-index:20;width:max-content;max-width:calc(100% - 32px);margin:24px auto 0;padding:12px 24px;display:flex;align-items:center;gap:40px;background:#ffffffd9;backdrop-filter:blur(24px);border:1px solid #e5e7df;border-radius:9999px}.brand{display:flex;gap:8px;align-items:center;font-size:18px;font-weight:700;white-space:nowrap}.mark{color:#278351;font-size:24px}.island nav{display:flex;gap:24px;font-size:14px;color:#666}.nav-login{font-size:14px;font-weight:600}.island a:hover,footer a:hover{color:#278351}#menu-toggle{display:none}.hero{padding-top:80px}.hero-copy{text-align:center}.eyebrow{font-size:12px;color:#52705d;font-weight:600;letter-spacing:.08em;display:flex;gap:8px;align-items:center}.hero .eyebrow{justify-content:center}.dot{display:inline-block;width:8px;height:8px;border-radius:9999px;background:#389966}.hero h1{font-size:60px;line-height:1;max-width:680px;margin:24px auto;background:linear-gradient(90deg,#000,#666);background-clip:text;color:transparent;letter-spacing:-.04em}.intro{font-size:18px;line-height:28px;color:#666;max-width:680px;margin:0 auto 32px}.button{display:inline-flex;align-items:center;gap:24px;font-weight:600;font-size:16px;line-height:24px;padding:8px 12px;background:#181818;color:white;border-radius:8px}.button:hover{background:#2d6847;transform:translateY(-2px)}.fine{font-size:12px;line-height:16px;color:#777;margin:16px 0 0}.workspace{margin-top:48px;background:white;border:1px solid #dde3d9;border-radius:16px;box-shadow:0 24px 64px #2436250d;overflow:hidden;text-align:left}.workspace-top{display:flex;justify-content:space-between;align-items:center;padding:16px 24px;font-size:14px;border-bottom:1px solid #e9ece5}.workspace-top .dot{margin-right:8px}.badge{font-size:12px;line-height:16px;padding:4px 8px;background:#f0f4ed;color:#52705d;border-radius:4px}.workspace-body{display:grid;grid-template-columns:224px 1fr}.sources{padding:24px 16px;background:#f7f8f4}.label{font-size:12px;color:#889080;margin-bottom:16px}.source{display:block;font-size:14px;padding:12px;border-radius:8px;margin-bottom:8px;color:#70776c}.selected{background:#e7efdf;color:#386343}.source-note{font-size:12px;line-height:20px;color:#889080;margin:48px 12px 0}.leads{padding:24px}.lead-heading{display:flex;justify-content:space-between;align-items:center;margin-bottom:16px}.lead-heading h2{font-size:18px;line-height:28px;margin:0}.lead-heading>span{font-size:12px;color:#888}.lead{border:1px solid #e6e9e1;padding:16px;border-radius:8px;margin-bottom:12px}.person{display:flex;align-items:center;gap:12px}.avatar{width:40px;height:40px;border-radius:9999px;display:grid;place-items:center;font-weight:600}.lilac{background:#ede8f3;color:#796387}.peach{background:#f4e8da;color:#927552}.person strong{display:block;font-size:14px}.person small{display:block;font-size:12px;color:#888;margin-top:4px}.score{margin-left:auto;color:#417453;font-size:24px;line-height:32px;font-weight:600;text-align:center}.score small{font-size:12px;color:#888;line-height:16px}.lead>p{font-size:14px;margin:16px 0;color:#555}.reason{font-size:12px;color:#63765e;display:flex;align-items:center;gap:8px}.reason span{padding:4px 8px;background:#edf4e8;border-radius:4px}.panel-foot{display:flex;justify-content:space-between;font-size:12px;color:#888;padding-top:8px}.hero-bottom{display:flex;justify-content:space-between;font-size:12px;color:#90968b;margin-top:24px}.section{padding-top:96px;padding-bottom:32px}.section-head h2,.evidence h2{font-size:36px;line-height:40px;letter-spacing:-.03em;margin-bottom:24px}.section-head>p:last-child{color:#777;font-size:16px}.benefits{display:grid;grid-template-columns:repeat(3,1fr);gap:32px;margin-top:48px}.benefits article{padding:24px;background:#f0f3ec;border:1px solid #e4e8df;border-radius:16px}.index{font-size:12px;color:#63806b}.benefits h3,.steps h3{font-size:20px;line-height:28px;margin:24px 0 12px}.benefits p,.steps p{font-size:14px;line-height:24px;color:#777;margin-bottom:0}.tagline{padding-top:96px;padding-bottom:64px}.tagline p{font-size:48px;line-height:1;letter-spacing:-.03em;max-width:680px;margin-bottom:24px}.tagline p span{color:#b5bcb0;transition:color .8s var(--ease)}.tagline p span.lit{color:#273b2c}.tagline-note{font-size:14px;color:#83907e}.steps{display:grid;grid-template-columns:repeat(3,1fr);gap:48px;margin-top:48px}.step{width:40px;height:40px;display:grid;place-items:center;border-radius:9999px;background:#e8efdf;color:#526d43;font-size:16px}.evidence{display:grid;grid-template-columns:1fr 1fr;gap:64px;margin-top:96px;padding-top:48px;padding-bottom:48px;background:#edf1e7;border-radius:16px}.evidence>div>p{color:#6d7764;font-size:16px}.evidence-card{background:white;border:1px solid #dfe5d6;border-radius:16px;padding:32px}.evidence-card h3{font-size:20px;line-height:28px;margin:24px 0}.evidence-card ul{list-style:none;padding:0;font-size:14px;color:#66725e}.evidence-card li{margin:12px 0}.evidence-card li span{color:#459263;margin-right:8px}.quote{font-size:18px;line-height:28px;color:#3d563f;padding:24px;background:#f4f6f0;border-radius:8px}.faq{max-width:800px;margin-top:40px}details{border-bottom:1px solid #dfe4d7;padding:24px 0}summary{cursor:pointer;list-style:none;display:flex;justify-content:space-between;font-size:18px;line-height:28px}summary::-webkit-details-marker{display:none}summary:hover{color:#278351}summary span{transition:transform .7s var(--ease)}details[open] summary span{transform:rotate(45deg)}details p{font-size:14px;color:#777;margin:16px 32px 0 0}.final{text-align:center;padding-top:96px;padding-bottom:96px}.final h2{font-size:36px;line-height:40px;margin:24px 0}.final>p{color:#777;font-size:16px;margin-bottom:32px}.final>p.fine{font-size:12px;margin:16px 0 0}footer{display:flex;align-items:center;gap:32px;flex-wrap:wrap;border-top:1px solid #e0e5da;padding-top:24px;padding-bottom:32px;font-size:12px;color:#888}footer div{display:flex;gap:24px;margin-left:auto}footer small{font-size:12px}.skip{position:absolute;left:16px;top:-80px;padding:12px;background:white;z-index:50}.skip:focus{top:16px}.animate{opacity:0;transform:translateY(64px);filter:blur(8px);transition:opacity .8s var(--ease),transform .8s var(--ease),filter .8s var(--ease)}.animate.visible{opacity:1;transform:none;filter:none}#mobile-menu[hidden]{display:none}#mobile-menu{position:fixed;inset:0;z-index:10;background:#ffffffed;backdrop-filter:blur(48px);padding:96px 32px;display:flex;flex-direction:column;gap:32px;font-size:24px}.menu-open{overflow:hidden}@media(max-width:760px){.wrap{padding-left:24px;padding-right:24px}.island{gap:24px;padding:12px 16px}.island .desktop,.nav-login{display:none}.brand{font-size:16px}#menu-toggle{display:block;position:relative;width:24px;height:24px;background:none;border:0}#menu-toggle span{position:absolute;left:0;width:24px;height:2px;background:#181818;transition:transform .7s var(--ease)}#menu-toggle span:first-child{transform:translateY(-4px)}#menu-toggle span:last-child{transform:translateY(4px)}#menu-toggle[aria-expanded=true] span:first-child{transform:rotate(45deg)}#menu-toggle[aria-expanded=true] span:last-child{transform:rotate(-45deg)}.hero{padding-top:64px}.hero h1{font-size:36px;line-height:40px;letter-spacing:-.04em}.intro{font-size:16px;line-height:24px}.workspace-body{grid-template-columns:1fr}.sources{display:none}.workspace-top{padding:16px;font-size:12px}.leads{padding:16px}.reason{flex-wrap:wrap}.lead>p{line-height:24px}.hero-bottom{flex-direction:column;gap:8px}.benefits,.steps,.evidence{grid-template-columns:1fr;gap:24px}.section{padding-top:64px}.section-head h2,.evidence h2,.final h2{font-size:30px;line-height:36px}.tagline{padding-top:64px;padding-bottom:32px}.tagline p{font-size:36px;line-height:40px}.evidence{margin:64px 16px 0;padding:24px}.evidence-card{padding:24px}.steps{margin-top:32px}.final{padding:64px 24px}footer{gap:16px}footer div{margin-left:0}footer>span{width:100%}.desktop{display:none}}@media(prefers-reduced-motion:reduce){*{scroll-behavior:auto!important;transition:none!important}.tagline p span{color:#273b2c}}
+ </style>
+</body>
+</html>
