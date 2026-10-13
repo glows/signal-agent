@@ -13,10 +13,12 @@ const typeLabel = {
   list_watch: "列表",
 };
 export function LeadDetail({
+  design,
   lead,
   agentName,
   onClose,
 }: {
+  design: "utility" | "nature";
   lead: Lead;
   agentName: string;
   onClose: () => void;
@@ -30,6 +32,7 @@ export function LeadDetail({
     >
       <DialogContent
         className="signal-workspace"
+        data-design={design}
         showCloseButton={false}
         style={{
           padding: 0,

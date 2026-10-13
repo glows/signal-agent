@@ -160,3 +160,48 @@ describe("real data workflow", () => {
     expect(screen.getByRole("button", { name: "运行一次" })).toBeEnabled();
   });
 });
+
+it("defaults to utility and restores the chosen workspace theme", async () => {
+  const user = userEvent.setup();
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false } },
+  });
+  const view = () => (
+    <QueryClientProvider client={client}>
+      <SignalWorkspace />
+    </QueryClientProvider>
+  );
+  const first = render(view());
+  expect(
+    first.container.querySelector(".app-shell")?.getAttribute("data-design"),
+  ).toBe("utility");
+  await user.click(screen.getByRole("button", { name: "数据设置" }));
+  await user.click(screen.getByRole("button", { name: /自然浅绿/ }));
+  expect(
+    first.container.querySelector(".app-shell")?.getAttribute("data-design"),
+  ).toBe("nature");
+  first.unmount();
+  const second = render(view());
+  expect(
+    second.container.querySelector(".app-shell")?.getAttribute("data-design"),
+  ).toBe("nature");
+  await user.click(screen.getByRole("button", { name: "数据设置" }));
+  await user.click(screen.getByRole("button", { name: /工具工作台/ }));
+  expect(
+    second.container.querySelector(".app-shell")?.getAttribute("data-design"),
+  ).toBe("utility");
+});
+
+it("applies the selected design to the portaled Agent form", async () => {
+  const user = userEvent.setup();
+  const client = new QueryClient();
+  render(
+    <QueryClientProvider client={client}>
+      <SignalWorkspace />
+    </QueryClientProvider>,
+  );
+  await user.click(screen.getByRole("button", { name: /^创建 Agent$/ }));
+  expect(screen.getByRole("dialog").getAttribute("data-design")).toBe(
+    "utility",
+  );
+});

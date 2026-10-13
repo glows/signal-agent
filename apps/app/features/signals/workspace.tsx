@@ -40,6 +40,7 @@ import { useMemo, useRef, useState } from "react";
 
 import { auth } from "#lib/auth";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
+import { useTheme } from "#lib/theme";
 import { trpcClient } from "#lib/trpc";
 
 import { AgentCard } from "./components/AgentCard";
@@ -49,6 +50,7 @@ import { LeadList } from "./components/LeadList";
 import { loadData, resetData, saveData } from "./storage";
 
 import "./styles.css";
+import "./utility-theme.css";
 
 type Section = "overview" | "agents" | "leads" | "settings";
 type Toast = { text: string; kind: "success" | "error" } | null;
@@ -63,6 +65,26 @@ export function SignalWorkspace({
   userId,
   embedded = false,
 }: { userId?: string; embedded?: boolean } = {}) {
+  const [design, setDesign] = useState<"utility" | "nature">(() => {
+    try {
+      return localStorage.getItem("signal-design") === "nature"
+        ? "nature"
+        : "utility";
+    } catch {
+      return "utility";
+    }
+  });
+  const [designSaveError, setDesignSaveError] = useState(false);
+  const { preference, setPreference } = useTheme();
+  function changeDesign(value: "utility" | "nature") {
+    setDesign(value);
+    try {
+      localStorage.setItem("signal-design", value);
+      setDesignSaveError(false);
+    } catch {
+      setDesignSaveError(true);
+    }
+  }
   const [mode, setMode] = useState<"demo" | "x">(userId ? "x" : "demo");
   const storageKey =
     mode === "demo" ? "signal-agent-demo-v1" : `signal-agent-x-v1:${userId}`;
@@ -470,7 +492,10 @@ export function SignalWorkspace({
   );
 
   return (
-    <div className={`signal-workspace app-shell ${embedded ? "embedded" : ""}`}>
+    <div
+      data-design={design}
+      className={`signal-workspace app-shell ${embedded ? "embedded" : ""}`}
+    >
       <aside className={`sidebar ${mobileNav ? "open" : ""}`}>{nav}</aside>
       {mobileNav && (
         <button
@@ -924,8 +949,82 @@ export function SignalWorkspace({
                   <div className="page-heading">
                     <div>
                       <span className="eyebrow">DATA PREFERENCES</span>
-                      <h1>演示设置</h1>
+                      <h1>工作台设置</h1>
                       <p>了解数据范围并管理本地状态。</p>
+                    </div>
+                  </div>
+                  <div className="settings-card theme-settings">
+                    <span className="settings-icon">
+                      <Settings2 size={20} />
+                    </span>
+                    <div>
+                      <h2>界面主题</h2>
+                      {design === "utility" && (
+                        <label className="appearance-control">
+                          明暗模式
+                          <select
+                            value={preference}
+                            onChange={(event) => {
+                              const value = event.target.value;
+                              if (
+                                value === "light" ||
+                                value === "dark" ||
+                                value === "system"
+                              )
+                                setPreference(value);
+                            }}
+                          >
+                            <option value="system">跟随系统</option>
+                            <option value="light">浅色</option>
+                            <option value="dark">深色</option>
+                          </select>
+                        </label>
+                      )}
+                      <p>
+                        选择工作台外观。主题在当前浏览器保存，适用于演示与真实数据模式。
+                      </p>
+                      <fieldset
+                        className="design-options"
+                        aria-label="界面主题"
+                      >
+                        <button
+                          aria-pressed={design === "utility"}
+                          onClick={() => changeDesign("utility")}
+                          className="design-option"
+                        >
+                          <span
+                            className="design-preview utility-preview"
+                            aria-hidden="true"
+                          >
+                            <i />
+                            <i />
+                            <i />
+                          </span>
+                          <strong>工具工作台</strong>
+                          <small>默认 · 紧凑布局，跟随系统明暗</small>
+                        </button>
+                        <button
+                          aria-pressed={design === "nature"}
+                          onClick={() => changeDesign("nature")}
+                          className="design-option"
+                        >
+                          <span
+                            className="design-preview nature-preview"
+                            aria-hidden="true"
+                          >
+                            <i />
+                            <i />
+                            <i />
+                          </span>
+                          <strong>自然浅绿</strong>
+                          <small>浅色 · 柔和背景，绿色信号</small>
+                        </button>
+                      </fieldset>
+                      {designSaveError && (
+                        <p role="alert">
+                          主题已应用，但浏览器禁止保存。刷新后会恢复默认主题。
+                        </p>
+                      )}
                     </div>
                   </div>
                   <div className="settings-card">
@@ -992,6 +1091,7 @@ export function SignalWorkspace({
         >
           <DialogContent
             className="signal-workspace"
+            data-design={design}
             showCloseButton={false}
             style={{
               padding: 0,
@@ -1018,6 +1118,7 @@ export function SignalWorkspace({
       )}
       {detailLead && (
         <LeadDetail
+          design={design}
           lead={detailLead}
           agentName={
             agents.find((agent) => agent.id === detailLead.agentId)?.name ??
