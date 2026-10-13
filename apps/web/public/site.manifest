@@ -1,6 +1,6 @@
 {
-  "short_name": "React App",
-  "name": "React App Sample",
+  "short_name": "Signal Agent",
+  "name": "Signal Agent",
   "icons": [
     {
       "src": "favicon.ico",

@@ -1,5 +1,5 @@
 {
-  "name": "@repo/root",
+  "name": "signal-agent",
   "version": "0.0.0",
   "private": true,
   "workspaces": [
