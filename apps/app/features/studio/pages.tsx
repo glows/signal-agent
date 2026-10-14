@@ -1444,12 +1444,34 @@ export function DmsPage() {
 }
 
 export function AnalyticsPage() {
-  const { data } = useWorkspace();
+  const { data, update } = useWorkspace();
   const [metrics, setMetrics] = useState<Awaited<
     ReturnType<typeof trpcClient.signals.analytics.mutate>
   > | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
+  const [days, setDays] = useState(30);
+  const [asOf, setAsOf] = useState(() => Date.now());
+  const cutoff = asOf - days * 24 * 60 * 60 * 1000;
+  const history = data.followerHistory
+    .filter(
+      (point) =>
+        Number.isFinite(point.followers) &&
+        Number.isFinite(Date.parse(point.recordedAt)) &&
+        Date.parse(point.recordedAt) >= cutoff,
+    )
+    .sort((a, b) => a.recordedAt.localeCompare(b.recordedAt));
+  const followerGain =
+    history.length > 1
+      ? history[history.length - 1]!.followers - history[0]!.followers
+      : null;
+  const visiblePosts =
+    metrics?.posts.filter(
+      (post) => post.createdAt && Date.parse(post.createdAt) >= cutoff,
+    ) ?? [];
+  const followerValues = history.map((point) => point.followers);
+  const followerMin = Math.min(...followerValues);
+  const followerSpan = Math.max(...followerValues) - followerMin || 1;
   const counts = {
     drafts: data.posts.filter((post) => post.status === "draft").length,
     scheduled: data.posts.filter((post) => post.status === "scheduled").length,
@@ -1462,7 +1484,8 @@ export function AnalyticsPage() {
           {
             generatedAt: new Date().toISOString(),
             counts,
-            metrics,
+            metrics: metrics ? { ...metrics, posts: visiblePosts } : null,
+            followerHistory: history,
             posts: data.posts,
           },
           null,
@@ -1482,7 +1505,20 @@ export function AnalyticsPage() {
     setLoading(true);
     setError("");
     try {
-      setMetrics(await trpcClient.signals.analytics.mutate());
+      const result = await trpcClient.signals.analytics.mutate();
+      setMetrics(result);
+      setAsOf(Date.now());
+      update((current) => ({
+        ...current,
+        followerHistory: [
+          ...current.followerHistory.filter(
+            (point) =>
+              point.recordedAt.slice(0, 10) !==
+              new Date().toISOString().slice(0, 10),
+          ),
+          { recordedAt: new Date().toISOString(), followers: result.followers },
+        ],
+      }));
     } catch (cause) {
       setError(cause instanceof Error ? cause.message : "读取统计失败。");
     } finally {
@@ -1495,6 +1531,15 @@ export function AnalyticsPage() {
       subtitle="查看内容准备情况与账号表现。"
       actions={
         <div className="studio-inline">
+          <select
+            aria-label="Analytics time range"
+            value={days}
+            onChange={(event) => setDays(Number(event.target.value))}
+          >
+            <option value={7}>7 days</option>
+            <option value={30}>30 days</option>
+            <option value={90}>90 days</option>
+          </select>
           <button
             className="studio-secondary"
             disabled={loading}
@@ -1525,26 +1570,57 @@ export function AnalyticsPage() {
       <Alert text={error} />
       <section className="studio-card">
         <h2>Follower Gain</h2>
-        {metrics ? (
+        {history.length ? (
           <>
             <strong className="studio-big-number">
-              {metrics.followers.toLocaleString()}
+              {followerGain === null
+                ? "—"
+                : `${followerGain >= 0 ? "+" : ""}${followerGain.toLocaleString()}`}
             </strong>
             <p className="studio-muted">
-              当前粉丝数。增长曲线需要连续记录历史数据。
+              最近一次记录：
+              {history[history.length - 1]!.followers.toLocaleString()} 位粉丝。
+              {history.length < 2
+                ? "再读取一天的数据后可计算增长。"
+                : `基于所选 ${days} 天内的 ${history.length} 次每日记录。`}
             </p>
+            {history.length > 1 && (
+              <svg
+                className="studio-follower-chart"
+                viewBox="0 0 600 160"
+                aria-label={`${days} 天内的粉丝数变化`}
+              >
+                <title>{days} 天内的粉丝数变化</title>
+                <polyline
+                  fill="none"
+                  stroke="#e1442d"
+                  strokeWidth="3"
+                  strokeLinejoin="round"
+                  strokeLinecap="round"
+                  points={history
+                    .map((point, index) => {
+                      return `${(index / (history.length - 1)) * 580 + 10},${140 - ((point.followers - followerMin) / followerSpan) * 120}`;
+                    })
+                    .join(" ")}
+                />
+              </svg>
+            )}
           </>
         ) : (
           <div className="studio-empty">
-            点击 Load from X 读取当前粉丝数。此操作会消耗 X API 额度。
+            所选时间内没有粉丝记录。点击 Load from X
+            保存今天的记录；此操作会消耗 X API 额度。
           </div>
         )}
       </section>
       <section className="studio-card">
         <h2>Posts that generated the most engagement</h2>
+        <p className="studio-muted">
+          X 返回的近期热门帖子中，显示所选时间内发布的内容。
+        </p>
         {metrics ? (
-          metrics.posts.length ? (
-            metrics.posts.map((post) => (
+          visiblePosts.length ? (
+            visiblePosts.map((post) => (
               <article className="studio-row" key={post.id}>
                 <div>
                   <p>{post.text}</p>
@@ -1566,7 +1642,7 @@ export function AnalyticsPage() {
               </article>
             ))
           ) : (
-            <div className="studio-empty">X 没有返回近期帖子。</div>
+            <div className="studio-empty">所选时间内没有返回热门帖子。</div>
           )
         ) : (
           <div className="studio-empty">读取 X 统计后显示表现最佳的帖子。</div>

@@ -34,12 +34,17 @@ export interface StudioMessage {
   createdAt: string;
   status: "pending" | "paused";
 }
+export interface FollowerSnapshot {
+  recordedAt: string;
+  followers: number;
+}
 export interface StudioData {
   version: 1;
   posts: StudioPost[];
   workers: StudioWorker[];
   contacts: StudioContact[];
   messages: StudioMessage[];
+  followerHistory: FollowerSnapshot[];
   about: string;
   audience: string;
   vocabulary: string;
@@ -60,6 +65,7 @@ const empty: StudioData = {
   workers: [],
   contacts: [],
   messages: [],
+  followerHistory: [],
   about: "",
   audience: "",
   vocabulary: "",
@@ -99,6 +105,9 @@ function read(userId: string): StudioData {
       workers: Array.isArray(value.workers) ? value.workers : [],
       contacts: Array.isArray(value.contacts) ? value.contacts : [],
       messages: Array.isArray(value.messages) ? value.messages : [],
+      followerHistory: Array.isArray(value.followerHistory)
+        ? value.followerHistory
+        : [],
       interests: Array.isArray(value.interests) ? value.interests : [],
       products: Array.isArray(value.products) ? value.products : [],
       bookmarkedPostIds: Array.isArray(value.bookmarkedPostIds)
