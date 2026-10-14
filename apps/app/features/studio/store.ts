@@ -25,6 +25,8 @@ export interface StudioContact {
   handle: string;
   name: string;
   note: string;
+  group?: string;
+  activities?: { id: string; at: string; text: string }[];
   status: "new" | "qualified" | "contacted" | "archived";
 }
 export interface StudioMessage {

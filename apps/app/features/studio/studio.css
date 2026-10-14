@@ -241,6 +241,28 @@
   margin-top: 6px;
   color: #545d6a;
 }
+.studio-contact-details {
+  display: grid;
+  gap: 12px;
+  margin-top: 16px;
+}
+.studio-contact-details label {
+  display: grid;
+  gap: 6px;
+}
+.studio-contact-details textarea {
+  min-height: 88px;
+  resize: vertical;
+}
+.studio-contact-details input,
+.studio-contact-details textarea {
+  width: 100%;
+  border: 1px solid #dce2e9;
+  border-radius: 8px;
+  padding: 9px 11px;
+  background: white;
+  color: inherit;
+}
 .studio-link {
   color: #e1442d;
   border: 0;

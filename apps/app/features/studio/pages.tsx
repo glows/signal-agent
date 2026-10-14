@@ -1168,7 +1168,16 @@ export function ContactsPage() {
   const [handle, setHandle] = useState("");
   const [name, setName] = useState("");
   const [note, setNote] = useState("");
+  const [group, setGroup] = useState("");
   const [filter, setFilter] = useState("all");
+  const [groupFilter, setGroupFilter] = useState("all");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [activityDrafts, setActivityDrafts] = useState<Record<string, string>>(
+    {},
+  );
+  const groups = [
+    ...new Set(data.contacts.map((contact) => contact.group).filter(Boolean)),
+  ];
   function add() {
     const cleaned = handle.trim().replace(/^@/, "");
     if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleaned)) return;
@@ -1184,7 +1193,9 @@ export function ContactsPage() {
               handle: cleaned,
               name: name.trim() || cleaned,
               note: note.trim(),
+              group: group.trim(),
               status: "new",
+              activities: [],
             },
             ...current.contacts,
           ],
@@ -1192,6 +1203,7 @@ export function ContactsPage() {
     setHandle("");
     setName("");
     setNote("");
+    setGroup("");
   }
   return (
     <Page title="Contacts" subtitle="整理值得跟进的 X 联系人。">
@@ -1216,6 +1228,12 @@ export function ContactsPage() {
             value={note}
             onChange={(e) => setNote(e.target.value)}
           />
+          <input
+            aria-label="Group"
+            placeholder="分组（可选）"
+            value={group}
+            onChange={(e) => setGroup(e.target.value)}
+          />
           <button className="studio-primary" onClick={add}>
             Add
           </button>
@@ -1224,20 +1242,38 @@ export function ContactsPage() {
       <section className="studio-card">
         <div className="studio-section-head">
           <h2>All contacts · {data.contacts.length}</h2>
-          <select
-            aria-label="筛选联系人"
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
-            <option value="all">All</option>
-            <option value="new">New</option>
-            <option value="qualified">Qualified</option>
-            <option value="contacted">Contacted</option>
-            <option value="archived">Archived</option>
-          </select>
+          <div className="studio-inline">
+            <select
+              aria-label="筛选联系人状态"
+              value={filter}
+              onChange={(e) => setFilter(e.target.value)}
+            >
+              <option value="all">All statuses</option>
+              <option value="new">New</option>
+              <option value="qualified">Qualified</option>
+              <option value="contacted">Contacted</option>
+              <option value="archived">Archived</option>
+            </select>
+            <select
+              aria-label="筛选联系人分组"
+              value={groupFilter}
+              onChange={(e) => setGroupFilter(e.target.value)}
+            >
+              <option value="all">All groups</option>
+              {groups.map((item) => (
+                <option key={item} value={item}>
+                  {item}
+                </option>
+              ))}
+            </select>
+          </div>
         </div>
         {data.contacts
-          .filter((contact) => filter === "all" || contact.status === filter)
+          .filter(
+            (contact) =>
+              (filter === "all" || contact.status === filter) &&
+              (groupFilter === "all" || contact.group === groupFilter),
+          )
           .map((contact) => (
             <article className="studio-row" key={contact.id}>
               <div>
@@ -1250,8 +1286,110 @@ export function ContactsPage() {
                   @{contact.handle} ↗
                 </a>
                 <p>{contact.note}</p>
+                {contact.group && <small>分组：{contact.group}</small>}
+                {editingId === contact.id && (
+                  <div className="studio-contact-details">
+                    <label>
+                      备注
+                      <textarea
+                        aria-label={`${contact.handle} 的备注`}
+                        value={contact.note}
+                        onChange={(e) =>
+                          update((current) => ({
+                            ...current,
+                            contacts: current.contacts.map((item) =>
+                              item.id === contact.id
+                                ? { ...item, note: e.target.value }
+                                : item,
+                            ),
+                          }))
+                        }
+                      />
+                    </label>
+                    <label>
+                      分组
+                      <input
+                        aria-label={`${contact.handle} 的分组`}
+                        value={contact.group ?? ""}
+                        onChange={(e) =>
+                          update((current) => ({
+                            ...current,
+                            contacts: current.contacts.map((item) =>
+                              item.id === contact.id
+                                ? { ...item, group: e.target.value }
+                                : item,
+                            ),
+                          }))
+                        }
+                      />
+                    </label>
+                    <h3>跟进记录</h3>
+                    {(contact.activities ?? []).map((activity) => (
+                      <p key={activity.id}>
+                        <small>{new Date(activity.at).toLocaleString()}</small>{" "}
+                        · {activity.text}
+                      </p>
+                    ))}
+                    <div className="studio-inline">
+                      <input
+                        aria-label={`${contact.handle} 的新跟进记录`}
+                        placeholder="记录一次跟进"
+                        value={activityDrafts[contact.id] ?? ""}
+                        onChange={(e) =>
+                          setActivityDrafts((current) => ({
+                            ...current,
+                            [contact.id]: e.target.value,
+                          }))
+                        }
+                      />
+                      <button
+                        className="studio-secondary"
+                        disabled={!activityDrafts[contact.id]?.trim()}
+                        onClick={() => {
+                          const text = activityDrafts[contact.id]?.trim();
+                          if (!text) return;
+                          if (
+                            update((current) => ({
+                              ...current,
+                              contacts: current.contacts.map((item) =>
+                                item.id === contact.id
+                                  ? {
+                                      ...item,
+                                      activities: [
+                                        ...(item.activities ?? []),
+                                        {
+                                          id: newId(),
+                                          at: new Date().toISOString(),
+                                          text,
+                                        },
+                                      ],
+                                    }
+                                  : item,
+                              ),
+                            }))
+                          ) {
+                            setActivityDrafts((current) => ({
+                              ...current,
+                              [contact.id]: "",
+                            }));
+                          }
+                        }}
+                      >
+                        添加记录
+                      </button>
+                    </div>
+                  </div>
+                )}
               </div>
               <div className="studio-inline">
+                <button
+                  className="studio-secondary"
+                  onClick={() =>
+                    setEditingId(editingId === contact.id ? null : contact.id)
+                  }
+                >
+                  {editingId === contact.id ? "收起" : "详情"}
+                </button>
                 <select
                   aria-label={`${contact.handle} 的状态`}
                   value={contact.status}
