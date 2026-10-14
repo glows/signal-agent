@@ -448,3 +448,12 @@
 .studio-filters label input {
   width: auto;
 }
+.studio-brief {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  color: #6b7280;
+  background: #f7f8fa;
+  padding: 12px;
+  border-radius: 10px;
+}

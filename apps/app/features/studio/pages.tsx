@@ -430,17 +430,41 @@ function makeDrafts(worker: StudioWorker, context: StudioData): StudioPost[] {
   const topic =
     worker.topic || context.products[0] || context.about || "你正在研究的领域";
   const audience = context.audience || "关注这个话题的人";
-  const patterns = [
+  const personalPatterns = [
     `${topic}：最近我反复想到一个问题。\n\n${audience}真正需要解决的，可能不是更多工具，而是更清楚地判断下一步。你怎么看？`,
     `关于${topic}，我现在的做法是：\n\n1. 先确认真实需求\n2. 找到可以验证的证据\n3. 再决定是否投入\n\n哪一步对你最难？`,
     `一个关于${topic}的观察：很多讨论停在结论，真正有用的是把过程和取舍讲清楚。\n\n我会继续记录实践中的例子。`,
   ];
+  const creatorPatterns = [
+    `如果你正在关注${topic}，先看这三个信号：\n\n1. 需求是否反复出现\n2. 谁愿意为解决方案付费\n3. 有没有可验证的结果\n\n你会先看哪一个？`,
+    `${topic}的一个常见误区：先追求完整方案，再寻找真正的用户。\n\n更好的顺序是从一个具体问题和一次真实反馈开始。`,
+    `关于${topic}，我会问三个问题：\n\n谁遇到问题？现在怎么解决？什么证据能证明新方法更好？`,
+  ];
+  const hybridPatterns = personalPatterns.map(
+    (item, index) => `${item}\n\n${creatorPatterns[index].split("\n\n")[0]}`,
+  );
+  const patterns =
+    worker.voice === "creator"
+      ? creatorPatterns
+      : worker.voice === "hybrid"
+        ? hybridPatterns
+        : personalPatterns;
+  const brief = [
+    `主题：${topic}`,
+    `受众：${audience}`,
+    `声音模式：${worker.voice === "mine" ? "个人观点模板" : worker.voice === "creator" ? "创作者结构模板" : "混合模板"}`,
+    context.vocabulary ? `风格指南：${context.vocabulary}` : "",
+    worker.instructions ? `额外要求：${worker.instructions}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
   return Array.from({ length: worker.count }, (_, i) => ({
     id: newId(),
     text: patterns[i % patterns.length],
     status: "review" as const,
     createdAt: new Date().toISOString(),
     workerId: worker.id,
+    reviewBrief: brief,
   }));
 }
 
@@ -448,6 +472,7 @@ export function WorkersPage() {
   const { data, update, error } = useWorkspace();
   const [editing, setEditing] = useState<StudioWorker | null>(null);
   const [notice, setNotice] = useState("");
+  const [reviewWhen, setReviewWhen] = useState<Record<string, string>>({});
   const review = data.posts.filter((post) => post.status === "review");
   function saveWorker() {
     if (!editing?.name.trim()) return setNotice("请输入 Worker 名称。");
@@ -462,6 +487,23 @@ export function WorkersPage() {
     setNotice("");
   }
   function setPost(id: string, status: "draft" | "scheduled" | "dismiss") {
+    const post = data.posts.find((item) => item.id === id);
+    if (!post) return;
+    if (status !== "dismiss" && (!post.text.trim() || post.text.length > 280)) {
+      setNotice("请先把草稿修改为 1–280 个字符，再批准。");
+      return;
+    }
+    const scheduledAt =
+      status === "scheduled"
+        ? parseZonedInput(reviewWhen[id] ?? "", data.timezone)
+        : null;
+    if (
+      status === "scheduled" &&
+      (!scheduledAt || new Date(scheduledAt).getTime() <= Date.now())
+    ) {
+      setNotice("请选择该时区中有效的未来发布时间。");
+      return;
+    }
     update((current) => ({
       ...current,
       posts:
@@ -472,39 +514,58 @@ export function WorkersPage() {
                 ? {
                     ...item,
                     status,
-                    ...(status === "scheduled"
-                      ? {
-                          scheduledAt: new Date(
-                            Date.now() + 86400000,
-                          ).toISOString(),
-                        }
-                      : {}),
+                    ...(scheduledAt ? { scheduledAt } : {}),
                   }
                 : item,
             ),
     }));
+    setNotice(
+      status === "dismiss"
+        ? "已驳回草稿。"
+        : status === "draft"
+          ? "已保存到草稿。"
+          : "已加入队列，到时仍需手动确认发布。",
+    );
   }
   return (
     <Page
       title="Workers"
       subtitle="配置写作 Worker，生成后逐篇审核。"
       actions={
-        <button
-          className="studio-primary"
-          onClick={() =>
-            setEditing({
-              id: newId(),
-              name: "Daily posts",
-              topic: "",
-              voice: "mine",
-              instructions: "",
-              count: 3,
-              active: true,
-            })
-          }
-        >
-          + Build your own
-        </button>
+        <div className="studio-inline">
+          <button
+            className="studio-secondary"
+            onClick={() =>
+              setEditing({
+                id: newId(),
+                name: "Daily posts",
+                topic: data.products[0] ?? "",
+                voice: "mine",
+                instructions: "",
+                count: 3,
+                active: true,
+              })
+            }
+          >
+            Start with a ready-made worker
+          </button>
+          <button
+            className="studio-primary"
+            onClick={() =>
+              setEditing({
+                id: newId(),
+                name: "Daily posts",
+                topic: "",
+                voice: "mine",
+                instructions: "",
+                count: 3,
+                active: true,
+              })
+            }
+          >
+            + Build your own
+          </button>
+        </div>
       }
     >
       <section className="studio-card studio-intro">
@@ -538,6 +599,8 @@ export function WorkersPage() {
               <button
                 className="studio-primary"
                 onClick={() => {
+                  if (!worker.active)
+                    return setNotice("请先启用这个 Worker。 ");
                   update((current) => ({
                     ...current,
                     posts: [...makeDrafts(worker, current), ...current.posts],
@@ -546,6 +609,21 @@ export function WorkersPage() {
                 }}
               >
                 Run
+              </button>
+              <button
+                className="studio-link"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    workers: current.workers.map((item) =>
+                      item.id === worker.id
+                        ? { ...item, active: !item.active }
+                        : item,
+                    ),
+                  }))
+                }
+              >
+                {worker.active ? "暂停" : "启用"}
               </button>
               <button
                 className="studio-link"
@@ -577,6 +655,12 @@ export function WorkersPage() {
         )}
         {review.map((post) => (
           <article className="studio-review" key={post.id}>
+            {post.reviewBrief && (
+              <details>
+                <summary>本篇写作简报与额外要求</summary>
+                <pre className="studio-brief">{post.reviewBrief}</pre>
+              </details>
+            )}
             <textarea
               aria-label="编辑 Worker 草稿"
               value={post.text}
@@ -591,7 +675,22 @@ export function WorkersPage() {
                 }))
               }
               rows={5}
+              maxLength={280}
             />
+            <small>{post.text.length}/280 字符</small>
+            <label>
+              批准后排期 · {data.timezone}
+              <input
+                type="datetime-local"
+                value={reviewWhen[post.id] ?? ""}
+                onChange={(event) =>
+                  setReviewWhen((current) => ({
+                    ...current,
+                    [post.id]: event.target.value,
+                  }))
+                }
+              />
+            </label>
             <div className="studio-actions">
               <button
                 className="studio-secondary"
@@ -603,7 +702,7 @@ export function WorkersPage() {
                 className="studio-primary"
                 onClick={() => setPost(post.id, "scheduled")}
               >
-                明天排期
+                批准并排期
               </button>
               <button
                 className="studio-link danger"

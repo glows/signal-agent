@@ -8,6 +8,7 @@ export interface StudioPost {
   createdAt: string;
   scheduledAt?: string;
   workerId?: string;
+  reviewBrief?: string;
   xPostUrl?: string;
 }
 export interface StudioWorker {
