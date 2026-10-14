@@ -10,7 +10,7 @@ export const envSchema = z.object({
   APP_ORIGIN: z.url(),
   BETTER_AUTH_SECRET: z.string().min(32),
   // Email OTP is the primary sign-in method, so mail delivery is not optional.
-  RESEND_API_KEY: z.string(),
+  RESEND_API_KEY: z.string().regex(/^re_.{16,}$/),
   RESEND_EMAIL_FROM: z.email(),
   // Google OAuth (optional – both or neither; see `googleProvider` in auth.ts).
   // Without them sign-in still works through email OTP and passkeys.

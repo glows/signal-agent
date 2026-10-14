@@ -44,6 +44,9 @@ export async function sendEmail(env: EmailEnv, options: EmailOptions) {
   if (!env.RESEND_API_KEY) {
     throw new Error("RESEND_API_KEY environment variable is required");
   }
+  if (!/^re_.{16,}$/.test(env.RESEND_API_KEY)) {
+    throw new Error("RESEND_API_KEY is not a valid Resend API key format");
+  }
 
   if (!env.RESEND_EMAIL_FROM) {
     throw new Error("RESEND_EMAIL_FROM environment variable is required");
