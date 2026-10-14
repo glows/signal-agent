@@ -8,6 +8,7 @@
     "outDir": "./dist",
     "types": ["bun", "node"]
   },
+  "references": [{ "path": "../packages/core" }],
   "include": [
     "schema/**/*.ts",
     "seeds/**/*.ts",

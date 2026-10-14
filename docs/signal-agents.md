@@ -68,3 +68,11 @@ bun run typecheck
 Connector and UI tests use fixture X responses and do not incur API charges. A successful live X smoke test requires real OAuth client credentials, a working local database, and a completed user authorization.
 
 Sources: [X search](https://docs.x.com/x-api/posts/search/introduction), [X pricing](https://docs.x.com/x-api/getting-started/pricing), [SuperX signal agents](https://docs.superx.so/api-reference/signals/list-signal-agents).
+
+## 每日获客简报
+
+登录后打开 `/brief`，配置产品、理想客户、监测来源与每日读取预算。保存后可手动运行，并开启每天北京时间 09:00 的自动发现。线索及审核状态保存到 PostgreSQL。
+
+本地 API 保持在线时每分钟扫描到期配置。生产使用 API Worker 的 Cron Triggers，部署后每 5 分钟扫描到期配置；本次开发没有部署生产环境。402 或权限配置错误会暂停自动发现，修复后需在配置中重新开启。
+
+预算限制帖子读取数量，不是货币费用上限；失败请求也预留预算。第一版每账号一个配置，最多保留 1000 条线索及 60 次运行。现有浏览器本地的 Agent 不会自动迁移到每日配置。

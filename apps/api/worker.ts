@@ -1,10 +1,9 @@
+import { Hono } from "hono";
 /**
  * @file Cloudflare Workers entrypoint.
  *
  * Initializes database and auth context, then mounts the core Hono app.
  */
-
-import { Hono } from "hono";
 import { logger } from "hono/logger";
 import { requestId } from "hono/request-id";
 import { secureHeaders } from "hono/secure-headers";
@@ -19,6 +18,7 @@ import {
   notFoundHandler,
   requestIdGenerator,
 } from "./lib/middleware.js";
+import { sweepAcquisition } from "./services/acquisition.js";
 
 type CloudflareEnv = {
   HYPERDRIVE_CACHED: Hyperdrive;
@@ -58,4 +58,14 @@ worker.use(async (c, next) => {
 // Mount the core API app
 worker.route("/", app);
 
-export default worker;
+export default {
+  fetch: worker.fetch,
+  async scheduled(
+    _controller: ScheduledController,
+    env: CloudflareEnv,
+    ctx: ExecutionContext,
+  ) {
+    const db = createDb(env.HYPERDRIVE_UNCACHED);
+    ctx.waitUntil(sweepAcquisition(db, createAuth(db, env), env));
+  },
+};

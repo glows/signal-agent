@@ -442,6 +442,9 @@ export function SignalWorkspace({
         <ChevronDown size={15} />
       </div>
       <div className="nav-group-label">工作台</div>
+      <Link className="brief-nav-link" to="/brief">
+        每日获客简报 ↗
+      </Link>
       <nav className="nav-list">
         <button
           className={section === "overview" ? "active" : ""}

@@ -144,6 +144,7 @@
       "version": "0.0.0",
       "dependencies": {
         "@paralleldrive/cuid2": "^3.3.0",
+        "@repo/core": "workspace:*",
         "postgres": "^3.4.9",
       },
       "devDependencies": {

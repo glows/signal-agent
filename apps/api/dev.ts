@@ -1,10 +1,9 @@
+import { parseArgs } from "node:util";
 /**
  * @file Local development server emulating Cloudflare Workers runtime.
  *
  * Requires wrangler.jsonc with HYPERDRIVE_CACHED and HYPERDRIVE_UNCACHED bindings.
  */
-
-import { parseArgs } from "node:util";
 
 import { Hono } from "hono";
 import { logger } from "hono/logger";
@@ -18,6 +17,7 @@ import type { AppContext } from "./lib/context.js";
 import { createDb } from "./lib/db.js";
 import { envSchema, type Env } from "./lib/env.js";
 import { errorHandler, notFoundHandler } from "./lib/middleware.js";
+import { sweepAcquisition } from "./services/acquisition.js";
 
 const { values: args } = parseArgs({
   args: Bun.argv.slice(2),
@@ -91,5 +91,37 @@ app.use(async (c, next) => {
 });
 
 app.route("/", api);
+
+// Local scheduler runs while the API process is alive; production uses Cron Triggers.
+let sweepRunning = false;
+let scheduleErrorReported = false;
+const acquisitionTimer = setInterval(async () => {
+  if (sweepRunning) return;
+  sweepRunning = true;
+  try {
+    const env = {
+      ...cf.env,
+      ...Object.fromEntries(
+        localEnvKeys.map((key) => [
+          key,
+          process.env[key] || cf.env[key as keyof typeof cf.env],
+        ]),
+      ),
+      APP_ORIGIN: process.env.APP_ORIGIN || cf.env.APP_ORIGIN,
+    };
+    const db = createDb(cf.env.HYPERDRIVE_UNCACHED);
+    await sweepAcquisition(db, createAuth(db, env), env);
+    scheduleErrorReported = false;
+  } catch {
+    if (!scheduleErrorReported)
+      console.error(
+        "Acquisition scheduler unavailable: check database migration and configuration.",
+      );
+    scheduleErrorReported = true;
+  } finally {
+    sweepRunning = false;
+  }
+}, 60_000);
+acquisitionTimer.unref();
 
 export default app;

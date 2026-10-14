@@ -4,3 +4,4 @@ export * from "./organization";
 export * from "./passkey";
 export * from "./subscription";
 export * from "./user";
+export * from "./acquisition";

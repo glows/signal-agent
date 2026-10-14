@@ -2051,3 +2051,13 @@
     width: 100%;
   }
 }
+.signal-workspace .brief-nav-link {
+  display: block;
+  padding: 12px;
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: inherit;
+  border: 1px solid currentColor;
+  border-radius: 8px;
+  text-decoration: none;
+}

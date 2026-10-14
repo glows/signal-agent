@@ -7,6 +7,7 @@
 import { fetchRequestHandler } from "@trpc/server/adapters/fetch";
 import { Hono } from "hono";
 
+import { acquisitionRouter } from "../routers/acquisition.js";
 import { billingRouter } from "../routers/billing.js";
 import { configRouter } from "../routers/config.js";
 import { signalsRouter } from "../routers/signals.js";
@@ -18,6 +19,7 @@ const appRouter = router({
   billing: billingRouter,
   config: configRouter,
   signals: signalsRouter,
+  acquisition: acquisitionRouter,
 });
 
 // HTTP router

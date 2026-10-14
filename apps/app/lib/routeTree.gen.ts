@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './../routes/__root'
 import { Route as appRouteRouteImport } from './../routes/(app)/route'
 import { Route as SignalDemoRouteImport } from './../routes/signal-demo'
 import { Route as appIndexRouteImport } from './../routes/(app)/index'
+import { Route as appBriefRouteImport } from './../routes/(app)/brief'
 import { Route as appMembersRouteImport } from './../routes/(app)/members'
 import { Route as appSettingsRouteImport } from './../routes/(app)/settings'
 import { Route as appSignalsRouteImport } from './../routes/(app)/signals'
@@ -30,6 +31,11 @@ const SignalDemoRoute = SignalDemoRouteImport.update({
 const appIndexRoute = appIndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appBriefRoute = appBriefRouteImport.update({
+  id: '/brief',
+  path: '/brief',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appMembersRoute = appMembersRouteImport.update({
@@ -60,6 +66,7 @@ const authSignupRoute = authSignupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/signal-demo': typeof SignalDemoRoute
+  '/brief': typeof appBriefRoute
   '/members': typeof appMembersRoute
   '/settings': typeof appSettingsRoute
   '/signals': typeof appSignalsRoute
@@ -69,6 +76,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/signal-demo': typeof SignalDemoRoute
+  '/brief': typeof appBriefRoute
   '/members': typeof appMembersRoute
   '/settings': typeof appSettingsRoute
   '/signals': typeof appSignalsRoute
@@ -80,6 +88,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
   '/signal-demo': typeof SignalDemoRoute
+  '/(app)/brief': typeof appBriefRoute
   '/(app)/members': typeof appMembersRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/signals': typeof appSignalsRoute
@@ -91,6 +100,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/signal-demo'
+    | '/brief'
     | '/members'
     | '/settings'
     | '/signals'
@@ -100,6 +110,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/signal-demo'
+    | '/brief'
     | '/members'
     | '/settings'
     | '/signals'
@@ -110,6 +121,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(app)'
     | '/signal-demo'
+    | '/(app)/brief'
     | '/(app)/members'
     | '/(app)/settings'
     | '/(app)/signals'
@@ -146,6 +158,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof appIndexRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/brief': {
+      id: '/(app)/brief'
+      path: '/brief'
+      fullPath: '/brief'
+      preLoaderRoute: typeof appBriefRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/members': {
@@ -187,6 +206,7 @@ declare module '@tanstack/react-router' {
 }
 
 interface appRouteRouteChildren {
+  appBriefRoute: typeof appBriefRoute
   appMembersRoute: typeof appMembersRoute
   appSettingsRoute: typeof appSettingsRoute
   appSignalsRoute: typeof appSignalsRoute
@@ -194,6 +214,7 @@ interface appRouteRouteChildren {
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
+  appBriefRoute: appBriefRoute,
   appMembersRoute: appMembersRoute,
   appSettingsRoute: appSettingsRoute,
   appSignalsRoute: appSignalsRoute,
