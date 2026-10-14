@@ -434,3 +434,17 @@
   display: block;
   margin: 18px 0 6px;
 }
+.studio-filters {
+  flex-wrap: wrap;
+  margin: 14px 0;
+}
+.studio-filters select {
+  width: auto;
+  min-width: 160px;
+}
+.studio-filters > input {
+  width: min(260px, 100%);
+}
+.studio-filters label input {
+  width: auto;
+}

@@ -44,6 +44,7 @@ export interface StudioData {
   vocabulary: string;
   interests: string[];
   products: string[];
+  bookmarkedPostIds: string[];
   timezone: string;
   weekStart: "monday" | "sunday";
   textDirection: "ltr" | "rtl";
@@ -63,6 +64,7 @@ const empty: StudioData = {
   vocabulary: "",
   interests: [],
   products: [],
+  bookmarkedPostIds: [],
   timezone: "Asia/Shanghai",
   weekStart: "monday",
   textDirection: "ltr",
@@ -98,6 +100,9 @@ function read(userId: string): StudioData {
       messages: Array.isArray(value.messages) ? value.messages : [],
       interests: Array.isArray(value.interests) ? value.interests : [],
       products: Array.isArray(value.products) ? value.products : [],
+      bookmarkedPostIds: Array.isArray(value.bookmarkedPostIds)
+        ? value.bookmarkedPostIds
+        : [],
     };
   } catch {
     return empty;

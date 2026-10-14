@@ -6,6 +6,7 @@ import { useSessionQuery } from "#lib/queries/session";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
 import { trpcClient } from "#lib/trpc";
 
+import { formatZonedDate, formatZonedInput, parseZonedInput } from "./schedule";
 import {
   newId,
   useStudio,
@@ -52,14 +53,6 @@ function Alert({ text }: { text: string }) {
       {text}
     </p>
   ) : null;
-}
-
-function niceDate(value: string) {
-  return new Intl.DateTimeFormat("zh-CN", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Shanghai",
-  }).format(new Date(value));
 }
 
 export function HomePage() {
@@ -113,9 +106,11 @@ export function ComposePage() {
     if (!text.trim()) return setNotice("先输入帖子内容。");
     if (text.length > 280)
       return setNotice("当前 X 发布接口最多接受 280 个字符，请缩短内容。");
+    const scheduledAt =
+      status === "scheduled" ? parseZonedInput(schedule, data.timezone) : null;
     if (
       status === "scheduled" &&
-      (!schedule || new Date(schedule).getTime() <= Date.now())
+      (!scheduledAt || new Date(scheduledAt).getTime() <= Date.now())
     )
       return setNotice("请选择未来的发布时间。");
     const post: StudioPost = {
@@ -123,9 +118,7 @@ export function ComposePage() {
       text: text.trim(),
       status,
       createdAt: new Date().toISOString(),
-      ...(status === "scheduled"
-        ? { scheduledAt: new Date(schedule).toISOString() }
-        : {}),
+      ...(scheduledAt ? { scheduledAt } : {}),
     };
     if (
       update((current) => ({ ...current, posts: [post, ...current.posts] }))
@@ -273,7 +266,10 @@ export function QueuePage() {
           <article className="studio-row" key={post.id}>
             <div>
               <strong>
-                {post.scheduledAt ? niceDate(post.scheduledAt) : "待选时间"}
+                {post.scheduledAt
+                  ? formatZonedDate(post.scheduledAt, data.timezone)
+                  : "待选时间"}{" "}
+                · {data.timezone}
               </strong>
               <p>{post.text}</p>
               {editing === post.id && (
@@ -287,12 +283,16 @@ export function QueuePage() {
                   <button
                     className="studio-primary"
                     onClick={() => {
-                      if (new Date(when).getTime() > Date.now()) {
+                      const scheduledAt = parseZonedInput(when, data.timezone);
+                      if (
+                        scheduledAt &&
+                        new Date(scheduledAt).getTime() > Date.now()
+                      ) {
                         change(post.id, {
-                          scheduledAt: new Date(when).toISOString(),
+                          scheduledAt,
                         });
                         setEditing(null);
-                      }
+                      } else setNotice("请选择该时区中有效的未来时间。");
                     }}
                   >
                     保存
@@ -314,13 +314,7 @@ export function QueuePage() {
                   setEditing(post.id);
                   setWhen(
                     post.scheduledAt
-                      ? new Date(
-                          new Date(post.scheduledAt).getTime() -
-                            new Date(post.scheduledAt).getTimezoneOffset() *
-                              60000,
-                        )
-                          .toISOString()
-                          .slice(0, 16)
+                      ? formatZonedInput(post.scheduledAt, data.timezone)
                       : "",
                   );
                 }}
@@ -391,13 +385,17 @@ export function QueuePage() {
                 <button
                   className="studio-primary"
                   onClick={() => {
-                    if (new Date(when).getTime() > Date.now()) {
+                    const scheduledAt = parseZonedInput(when, data.timezone);
+                    if (
+                      scheduledAt &&
+                      new Date(scheduledAt).getTime() > Date.now()
+                    ) {
                       change(post.id, {
                         status: "scheduled",
-                        scheduledAt: new Date(when).toISOString(),
+                        scheduledAt,
                       });
                       setEditing(null);
-                    } else setNotice("请选择未来的发布时间。");
+                    } else setNotice("请选择该时区中有效的未来时间。");
                   }}
                 >
                   确认排期
@@ -708,6 +706,7 @@ export function WorkersPage() {
 }
 
 export function InspirationPage() {
+  const { data, update, error: storageError } = useWorkspace();
   const { data: session } = useSessionQuery();
   const connection = useQuery(signalConnectionQueryOptions(session?.user.id));
   const [query, setQuery] = useState("");
@@ -717,6 +716,26 @@ export function InspirationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"posts" | "media">("posts");
+  const [period, setPeriod] = useState<"all" | "day" | "week">("week");
+  const [account, setAccount] = useState("");
+  const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
+  const [notice, setNotice] = useState("");
+  const [searchedAt, setSearchedAt] = useState(0);
+  const shown = results.filter((post) => {
+    if (bookmarkedOnly && !data.bookmarkedPostIds.includes(post.id))
+      return false;
+    if (
+      account.trim() &&
+      !post.author.username
+        .toLowerCase()
+        .includes(account.trim().replace(/^@/, "").toLowerCase())
+    )
+      return false;
+    if (period === "all") return true;
+    if (!post.createdAt) return false;
+    const age = searchedAt - new Date(post.createdAt).getTime();
+    return age >= 0 && age <= (period === "day" ? 1 : 7) * 86400000;
+  });
   async function search() {
     if (!query.trim()) return setError("请输入搜索关键词。");
     setLoading(true);
@@ -727,6 +746,7 @@ export function InspirationPage() {
         mediaOnly: tab === "media",
       });
       setResults(result);
+      setSearchedAt(Date.now());
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "搜索失败，请稍后重试。",
@@ -775,16 +795,41 @@ export function InspirationPage() {
           {loading ? "Searching…" : "Search"}
         </button>
       </div>
+      <div className="studio-inline studio-filters">
+        <select
+          aria-label="时间范围"
+          value={period}
+          onChange={(e) => setPeriod(e.target.value as typeof period)}
+        >
+          <option value="day">过去 24 小时</option>
+          <option value="week">过去一周</option>
+          <option value="all">全部结果</option>
+        </select>
+        <input
+          aria-label="筛选 X 账号"
+          value={account}
+          onChange={(e) => setAccount(e.target.value)}
+          placeholder="筛选账号 @handle"
+        />
+        <label className="studio-inline">
+          <input
+            type="checkbox"
+            checked={bookmarkedOnly}
+            onChange={(e) => setBookmarkedOnly(e.target.checked)}
+          />
+          仅收藏
+        </label>
+      </div>
       <p className="studio-muted">
         使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
-        。每次查询会消耗 X API 额度。
+        。每次查询会消耗 X API 额度；筛选仅作用于本次返回的最多 30 条结果。
       </p>
       {!connection.data?.allowed && (
         <p className="studio-alert">请先在 Signals 页面连接并授权 X。</p>
       )}
-      <Alert text={error} />
+      <Alert text={error || storageError || notice} />
       <div className="studio-masonry">
-        {results.map((post) => (
+        {shown.map((post) => (
           <article className="studio-card" key={post.id}>
             <strong>{post.author.name}</strong>
             <span className="studio-muted"> @{post.author.username}</span>
@@ -812,11 +857,52 @@ export function InspirationPage() {
               >
                 View on X ↗
               </a>
-              <Link to="/compose">Remix →</Link>
+              <button
+                className="studio-link"
+                onClick={() => {
+                  const source = `https://x.com/${post.author.username}/status/${post.id}`;
+                  const text = `灵感来源：${source}\n\n我的观点：`;
+                  if (
+                    update((current) => ({
+                      ...current,
+                      posts: [
+                        {
+                          id: newId(),
+                          text,
+                          status: "draft",
+                          createdAt: new Date().toISOString(),
+                        },
+                        ...current.posts,
+                      ],
+                    }))
+                  )
+                    setNotice("已创建灵感草稿，可在 Queue 中继续编辑。 ");
+                }}
+              >
+                用于创作 →
+              </button>
+              <button
+                className="studio-link"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    bookmarkedPostIds: current.bookmarkedPostIds.includes(
+                      post.id,
+                    )
+                      ? current.bookmarkedPostIds.filter((id) => id !== post.id)
+                      : [...current.bookmarkedPostIds, post.id],
+                  }))
+                }
+              >
+                {data.bookmarkedPostIds.includes(post.id) ? "取消收藏" : "收藏"}
+              </button>
             </div>
           </article>
         ))}
       </div>
+      {results.length > 0 && shown.length === 0 && (
+        <div className="studio-empty">本次结果中没有符合筛选条件的帖子。</div>
+      )}
       {results.length === 0 && !loading && !error && (
         <div className="studio-empty">
           搜索一个话题，查看来自 X 的{tab === "media" ? "媒体" : "帖子"}。
