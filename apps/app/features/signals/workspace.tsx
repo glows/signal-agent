@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { useMemo, useRef, useState } from "react";
 
+import { newId, useStudio } from "#features/studio/store";
 import { auth } from "#lib/auth";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
 import { useTheme } from "#lib/theme";
@@ -65,6 +66,7 @@ export function SignalWorkspace({
   userId,
   embedded = false,
 }: { userId?: string; embedded?: boolean } = {}) {
+  const studio = useStudio(userId ?? "");
   const [design, setDesign] = useState<"utility" | "nature">(() => {
     try {
       return localStorage.getItem("signal-design") === "nature"
@@ -1123,6 +1125,34 @@ export function SignalWorkspace({
         <LeadDetail
           design={design}
           lead={detailLead}
+          onAddContact={
+            userId
+              ? () => {
+                  const lead = detailLead;
+                  studio.update((current) => ({
+                    ...current,
+                    contacts: current.contacts.some(
+                      (contact) =>
+                        contact.handle.toLowerCase() ===
+                        lead.person.username.toLowerCase(),
+                    )
+                      ? current.contacts
+                      : [
+                          {
+                            id: newId(),
+                            handle: lead.person.username,
+                            name: lead.person.displayName,
+                            note: lead.rationale,
+                            status: "new",
+                          },
+                          ...current.contacts,
+                        ],
+                  }));
+                  setDetailLead(null);
+                  notify("已加入 Contacts");
+                }
+              : undefined
+          }
           agentName={
             agents.find((agent) => agent.id === detailLead.agentId)?.name ??
             "已删除 Agent"

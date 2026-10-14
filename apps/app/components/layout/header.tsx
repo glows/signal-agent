@@ -28,9 +28,7 @@ export function Header({ isSidebarOpen, onMenuToggle }: HeaderProps) {
       </Button>
 
       <div className="flex-1 flex items-center gap-4">
-        <h1 className="text-lg font-semibold">
-          {import.meta.env.VITE_APP_NAME}
-        </h1>
+        <h1 className="text-lg font-semibold">Signal Agent</h1>
       </div>
     </header>
   );

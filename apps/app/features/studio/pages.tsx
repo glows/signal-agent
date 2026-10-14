@@ -1,0 +1,1392 @@
+import { useQuery } from "@tanstack/react-query";
+import { Link } from "@tanstack/react-router";
+import { useState } from "react";
+
+import { useSessionQuery } from "#lib/queries/session";
+import { signalConnectionQueryOptions } from "#lib/queries/signals";
+import { trpcClient } from "#lib/trpc";
+
+import {
+  newId,
+  useStudio,
+  type StudioData,
+  type StudioPost,
+  type StudioWorker,
+} from "./store";
+
+import "./studio.css";
+
+function useWorkspace() {
+  const { data: session } = useSessionQuery();
+  return useStudio(session?.user.id ?? "");
+}
+
+function Page({
+  title,
+  subtitle,
+  children,
+  actions,
+}: {
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  actions?: React.ReactNode;
+}) {
+  return (
+    <div className="studio-page">
+      <header className="studio-heading">
+        <div>
+          <h1>{title}</h1>
+          {subtitle && <p>{subtitle}</p>}
+        </div>
+        {actions}
+      </header>
+      {children}
+    </div>
+  );
+}
+
+function Alert({ text }: { text: string }) {
+  return text ? (
+    <p className="studio-alert" role="alert">
+      {text}
+    </p>
+  ) : null;
+}
+
+function niceDate(value: string) {
+  return new Intl.DateTimeFormat("zh-CN", {
+    dateStyle: "medium",
+    timeStyle: "short",
+    timeZone: "Asia/Shanghai",
+  }).format(new Date(value));
+}
+
+export function HomePage() {
+  const { data } = useWorkspace();
+  const review = data.posts.filter((post) => post.status === "review").length;
+  const scheduled = data.posts.filter(
+    (post) => post.status === "scheduled",
+  ).length;
+  return (
+    <Page title="Home" subtitle="你的内容和获客工作台。">
+      <div className="studio-stats">
+        <Link to="/workers" className="studio-stat">
+          <strong>{review}</strong>
+          <span>待审核的 Worker 草稿</span>
+        </Link>
+        <Link to="/queue" className="studio-stat">
+          <strong>{scheduled}</strong>
+          <span>已排期的帖子</span>
+        </Link>
+        <Link to="/contacts" className="studio-stat">
+          <strong>{data.contacts.length}</strong>
+          <span>联系人</span>
+        </Link>
+      </div>
+      <div className="studio-grid-2">
+        <section className="studio-card">
+          <h2>写下一篇帖子</h2>
+          <p>从想法开始，保存草稿或加入发布队列。</p>
+          <Link className="studio-primary" to="/compose">
+            Create a post
+          </Link>
+        </section>
+        <section className="studio-card">
+          <h2>查看新的线索</h2>
+          <p>从 X 监测来源寻找与你的产品相关的人。</p>
+          <Link className="studio-secondary" to="/signals">
+            打开 Signals
+          </Link>
+        </section>
+      </div>
+    </Page>
+  );
+}
+
+export function ComposePage() {
+  const { data, update, error } = useWorkspace();
+  const [text, setText] = useState("");
+  const [schedule, setSchedule] = useState("");
+  const [notice, setNotice] = useState("");
+  function save(status: "draft" | "scheduled") {
+    if (!text.trim()) return setNotice("先输入帖子内容。");
+    if (text.length > 280)
+      return setNotice("当前 X 发布接口最多接受 280 个字符，请缩短内容。");
+    if (
+      status === "scheduled" &&
+      (!schedule || new Date(schedule).getTime() <= Date.now())
+    )
+      return setNotice("请选择未来的发布时间。");
+    const post: StudioPost = {
+      id: newId(),
+      text: text.trim(),
+      status,
+      createdAt: new Date().toISOString(),
+      ...(status === "scheduled"
+        ? { scheduledAt: new Date(schedule).toISOString() }
+        : {}),
+    };
+    if (
+      update((current) => ({ ...current, posts: [post, ...current.posts] }))
+    ) {
+      setText("");
+      setSchedule("");
+      setNotice(
+        status === "scheduled"
+          ? "已加入队列。到时需要你在队列中确认发布。"
+          : "草稿已保存。",
+      );
+    }
+  }
+  return (
+    <Page
+      title="Create a post"
+      subtitle="写作、预览，然后保存草稿或安排发布时间。"
+    >
+      <div className="studio-grid-2">
+        <section className="studio-card">
+          <label htmlFor="post-text">帖子内容</label>
+          <textarea
+            id="post-text"
+            value={text}
+            onChange={(event) => setText(event.target.value)}
+            rows={10}
+            maxLength={280}
+            placeholder="分享一个想法…"
+          />
+          <small>{text.length}/280 字符</small>
+          <label htmlFor="post-time">发布时间 · {data.timezone}</label>
+          <input
+            id="post-time"
+            type="datetime-local"
+            value={schedule}
+            onChange={(event) => setSchedule(event.target.value)}
+          />
+          <div className="studio-actions">
+            <button className="studio-secondary" onClick={() => save("draft")}>
+              保存草稿
+            </button>
+            <button
+              className="studio-primary"
+              onClick={() => save("scheduled")}
+            >
+              加入队列
+            </button>
+          </div>
+          <Alert text={notice || error} />
+        </section>
+        <section className="studio-card">
+          <h2>预览</h2>
+          <div className="studio-post-preview">
+            <strong>你的 X 帖子</strong>
+            <p>{text || "你的内容会显示在这里…"}</p>
+          </div>
+          <p className="studio-muted">
+            排期内容保存在当前浏览器。发布前需要由你确认。
+          </p>
+        </section>
+      </div>
+    </Page>
+  );
+}
+
+export function QueuePage() {
+  const { data, update, error } = useWorkspace();
+  const [editing, setEditing] = useState<string | null>(null);
+  const [when, setWhen] = useState("");
+  const [publishing, setPublishing] = useState<string | null>(null);
+  const [notice, setNotice] = useState("");
+  const scheduled = data.posts
+    .filter((post) => post.status === "scheduled")
+    .sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? ""));
+  const drafts = data.posts.filter((post) => post.status === "draft");
+  const published = data.posts.filter((post) => post.status === "published");
+  function change(id: string, patch: Partial<StudioPost>) {
+    update((current) => ({
+      ...current,
+      posts: current.posts.map((post) =>
+        post.id === id ? { ...post, ...patch } : post,
+      ),
+    }));
+  }
+  function remove(id: string) {
+    update((current) => ({
+      ...current,
+      posts: current.posts.filter((post) => post.id !== id),
+    }));
+  }
+  async function publish(post: StudioPost) {
+    if (
+      !window.confirm(
+        `确认现在通过已连接的 X 账号发布这篇帖子？\n\n${post.text}`,
+      )
+    )
+      return;
+    setPublishing(post.id);
+    setNotice("");
+    try {
+      const result = await trpcClient.signals.publish.mutate({
+        text: post.text,
+      });
+      if (
+        update((current) => ({
+          ...current,
+          posts: current.posts.map((item) =>
+            item.id === post.id
+              ? { ...item, status: "published", xPostUrl: result.url }
+              : item,
+          ),
+        }))
+      )
+        setNotice("已发布到 X。");
+      else setNotice(`已发布到 X，但浏览器未保存发布记录：${result.url}`);
+    } catch (cause) {
+      setNotice(
+        cause instanceof Error
+          ? cause.message
+          : "发布失败，请到 X 账号确认状态。",
+      );
+    } finally {
+      setPublishing(null);
+    }
+  }
+  return (
+    <Page
+      title="My queue"
+      subtitle="查看排期、改期和管理草稿。"
+      actions={
+        <Link className="studio-primary" to="/compose">
+          + Create a post
+        </Link>
+      }
+    >
+      <section className="studio-card">
+        <h2>已排期 · {scheduled.length}</h2>
+        <p className="studio-muted">
+          到达排期时间后，请在这里确认发布。当前不会自动发布。
+        </p>
+        {scheduled.length === 0 && (
+          <p className="studio-muted">还没有已排期的帖子。</p>
+        )}
+        {scheduled.map((post) => (
+          <article className="studio-row" key={post.id}>
+            <div>
+              <strong>
+                {post.scheduledAt ? niceDate(post.scheduledAt) : "待选时间"}
+              </strong>
+              <p>{post.text}</p>
+              {editing === post.id && (
+                <div className="studio-inline">
+                  <input
+                    aria-label="新的发布时间"
+                    type="datetime-local"
+                    value={when}
+                    onChange={(event) => setWhen(event.target.value)}
+                  />
+                  <button
+                    className="studio-primary"
+                    onClick={() => {
+                      if (new Date(when).getTime() > Date.now()) {
+                        change(post.id, {
+                          scheduledAt: new Date(when).toISOString(),
+                        });
+                        setEditing(null);
+                      }
+                    }}
+                  >
+                    保存
+                  </button>
+                </div>
+              )}
+            </div>
+            <div className="studio-inline">
+              <button
+                className="studio-primary"
+                disabled={publishing === post.id}
+                onClick={() => void publish(post)}
+              >
+                {publishing === post.id ? "发布中…" : "现在发布"}
+              </button>
+              <button
+                className="studio-link"
+                onClick={() => {
+                  setEditing(post.id);
+                  setWhen(
+                    post.scheduledAt
+                      ? new Date(
+                          new Date(post.scheduledAt).getTime() -
+                            new Date(post.scheduledAt).getTimezoneOffset() *
+                              60000,
+                        )
+                          .toISOString()
+                          .slice(0, 16)
+                      : "",
+                  );
+                }}
+              >
+                改期
+              </button>
+              <button
+                className="studio-link"
+                onClick={() =>
+                  change(post.id, { status: "draft", scheduledAt: undefined })
+                }
+              >
+                移到草稿
+              </button>
+              <button
+                className="studio-link danger"
+                onClick={() => remove(post.id)}
+              >
+                删除
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+      <section className="studio-card">
+        <h2>草稿 · {drafts.length}</h2>
+        {drafts.length === 0 && <p className="studio-muted">还没有草稿。</p>}
+        {drafts.map((post) => (
+          <article className="studio-row" key={post.id}>
+            <p>{post.text}</p>
+            <div className="studio-inline">
+              <button
+                className="studio-link"
+                onClick={() => {
+                  const next = window.prompt("编辑草稿", post.text);
+                  if (next?.trim() && next.trim().length <= 280)
+                    change(post.id, { text: next.trim() });
+                  else if (next && next.trim().length > 280)
+                    setNotice("帖子最多 280 字符。");
+                }}
+              >
+                编辑
+              </button>
+              <button
+                className="studio-link"
+                onClick={() => {
+                  setEditing(post.id);
+                  setWhen("");
+                }}
+              >
+                加入队列
+              </button>
+              <button
+                className="studio-link danger"
+                onClick={() => remove(post.id)}
+              >
+                删除
+              </button>
+            </div>
+            {editing === post.id && (
+              <div className="studio-inline">
+                <input
+                  aria-label="草稿发布时间"
+                  type="datetime-local"
+                  value={when}
+                  onChange={(event) => setWhen(event.target.value)}
+                />
+                <button
+                  className="studio-primary"
+                  onClick={() => {
+                    if (new Date(when).getTime() > Date.now()) {
+                      change(post.id, {
+                        status: "scheduled",
+                        scheduledAt: new Date(when).toISOString(),
+                      });
+                      setEditing(null);
+                    } else setNotice("请选择未来的发布时间。");
+                  }}
+                >
+                  确认排期
+                </button>
+              </div>
+            )}
+          </article>
+        ))}
+      </section>
+      <section className="studio-card">
+        <h2>已发布 · {published.length}</h2>
+        {published.length === 0 && (
+          <p className="studio-muted">暂无已发布的帖子。</p>
+        )}
+        {published.map((post) => (
+          <article className="studio-row" key={post.id}>
+            <p>{post.text}</p>
+            {post.xPostUrl && (
+              <a href={post.xPostUrl} target="_blank" rel="noreferrer">
+                View on X ↗
+              </a>
+            )}
+          </article>
+        ))}
+      </section>
+      <Alert text={notice || error} />
+    </Page>
+  );
+}
+
+function makeDrafts(worker: StudioWorker, context: StudioData): StudioPost[] {
+  const topic =
+    worker.topic || context.products[0] || context.about || "你正在研究的领域";
+  const audience = context.audience || "关注这个话题的人";
+  const patterns = [
+    `${topic}：最近我反复想到一个问题。\n\n${audience}真正需要解决的，可能不是更多工具，而是更清楚地判断下一步。你怎么看？`,
+    `关于${topic}，我现在的做法是：\n\n1. 先确认真实需求\n2. 找到可以验证的证据\n3. 再决定是否投入\n\n哪一步对你最难？`,
+    `一个关于${topic}的观察：很多讨论停在结论，真正有用的是把过程和取舍讲清楚。\n\n我会继续记录实践中的例子。`,
+  ];
+  return Array.from({ length: worker.count }, (_, i) => ({
+    id: newId(),
+    text: patterns[i % patterns.length],
+    status: "review" as const,
+    createdAt: new Date().toISOString(),
+    workerId: worker.id,
+  }));
+}
+
+export function WorkersPage() {
+  const { data, update, error } = useWorkspace();
+  const [editing, setEditing] = useState<StudioWorker | null>(null);
+  const [notice, setNotice] = useState("");
+  const review = data.posts.filter((post) => post.status === "review");
+  function saveWorker() {
+    if (!editing?.name.trim()) return setNotice("请输入 Worker 名称。");
+    const worker = editing;
+    update((current) => ({
+      ...current,
+      workers: current.workers.some((item) => item.id === worker.id)
+        ? current.workers.map((item) => (item.id === worker.id ? worker : item))
+        : [...current.workers, worker],
+    }));
+    setEditing(null);
+    setNotice("");
+  }
+  function setPost(id: string, status: "draft" | "scheduled" | "dismiss") {
+    update((current) => ({
+      ...current,
+      posts:
+        status === "dismiss"
+          ? current.posts.filter((item) => item.id !== id)
+          : current.posts.map((item) =>
+              item.id === id
+                ? {
+                    ...item,
+                    status,
+                    ...(status === "scheduled"
+                      ? {
+                          scheduledAt: new Date(
+                            Date.now() + 86400000,
+                          ).toISOString(),
+                        }
+                      : {}),
+                  }
+                : item,
+            ),
+    }));
+  }
+  return (
+    <Page
+      title="Workers"
+      subtitle="配置写作 Worker，生成后逐篇审核。"
+      actions={
+        <button
+          className="studio-primary"
+          onClick={() =>
+            setEditing({
+              id: newId(),
+              name: "Daily posts",
+              topic: "",
+              voice: "mine",
+              instructions: "",
+              count: 3,
+              active: true,
+            })
+          }
+        >
+          + Build your own
+        </button>
+      }
+    >
+      <section className="studio-card studio-intro">
+        <h2>Put your content on autopilot</h2>
+        <p>
+          Worker 根据你的主题生成一批可编辑草稿。每篇都由你决定是否保存或排期。
+        </p>
+        <p className="studio-muted">
+          当前使用本地模板生成草稿，尚未接入 AI 写作服务。
+        </p>
+      </section>
+      <section className="studio-card">
+        <h2>Your workers · {data.workers.length}</h2>
+        {data.workers.length === 0 && (
+          <p className="studio-muted">还没有 Worker。创建一个开始生成草稿。</p>
+        )}
+        {data.workers.map((worker) => (
+          <article className="studio-row" key={worker.id}>
+            <div>
+              <strong>{worker.name}</strong>
+              <p>
+                {worker.voice === "mine"
+                  ? "My voice"
+                  : worker.voice === "creator"
+                    ? "Creator style"
+                    : "Hybrid"}{" "}
+                · {worker.topic || "你的主题"} · 每次 {worker.count} 篇
+              </p>
+            </div>
+            <div className="studio-inline">
+              <button
+                className="studio-primary"
+                onClick={() => {
+                  update((current) => ({
+                    ...current,
+                    posts: [...makeDrafts(worker, current), ...current.posts],
+                  }));
+                  setNotice("草稿已生成，请逐篇审核。");
+                }}
+              >
+                Run
+              </button>
+              <button
+                className="studio-link"
+                onClick={() => setEditing(worker)}
+              >
+                编辑
+              </button>
+              <button
+                className="studio-link danger"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    workers: current.workers.filter(
+                      (item) => item.id !== worker.id,
+                    ),
+                  }))
+                }
+              >
+                删除
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+      <section className="studio-card">
+        <h2>待审核 · {review.length}</h2>
+        {review.length === 0 && (
+          <p className="studio-muted">运行 Worker 后，草稿会出现在这里。</p>
+        )}
+        {review.map((post) => (
+          <article className="studio-review" key={post.id}>
+            <textarea
+              aria-label="编辑 Worker 草稿"
+              value={post.text}
+              onChange={(event) =>
+                update((current) => ({
+                  ...current,
+                  posts: current.posts.map((item) =>
+                    item.id === post.id
+                      ? { ...item, text: event.target.value }
+                      : item,
+                  ),
+                }))
+              }
+              rows={5}
+            />
+            <div className="studio-actions">
+              <button
+                className="studio-secondary"
+                onClick={() => setPost(post.id, "draft")}
+              >
+                保存为草稿
+              </button>
+              <button
+                className="studio-primary"
+                onClick={() => setPost(post.id, "scheduled")}
+              >
+                明天排期
+              </button>
+              <button
+                className="studio-link danger"
+                onClick={() => setPost(post.id, "dismiss")}
+              >
+                驳回
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+      <Alert text={notice || error} />
+      {editing && (
+        <div className="studio-modal-backdrop">
+          <dialog
+            open
+            className="studio-modal"
+            aria-modal="true"
+            aria-label="Edit worker"
+          >
+            <h2>Edit worker</h2>
+            <label>
+              名称
+              <input
+                value={editing.name}
+                onChange={(e) =>
+                  setEditing({ ...editing, name: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              主题
+              <input
+                value={editing.topic}
+                onChange={(e) =>
+                  setEditing({ ...editing, topic: e.target.value })
+                }
+              />
+            </label>
+            <label>
+              Voice
+              <select
+                value={editing.voice}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    voice: e.target.value as StudioWorker["voice"],
+                  })
+                }
+              >
+                <option value="mine">My voice</option>
+                <option value="creator">Creator style</option>
+                <option value="hybrid">Hybrid</option>
+              </select>
+            </label>
+            <label>
+              每次篇数
+              <input
+                type="number"
+                min="1"
+                max="6"
+                value={editing.count}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    count: Math.max(
+                      1,
+                      Math.min(6, Number(e.target.value) || 1),
+                    ),
+                  })
+                }
+              />
+            </label>
+            <label>
+              额外写作要求
+              <textarea
+                rows={3}
+                value={editing.instructions}
+                onChange={(e) =>
+                  setEditing({ ...editing, instructions: e.target.value })
+                }
+              />
+            </label>
+            <div className="studio-actions">
+              <button
+                className="studio-secondary"
+                onClick={() => setEditing(null)}
+              >
+                取消
+              </button>
+              <button className="studio-primary" onClick={saveWorker}>
+                保存
+              </button>
+            </div>
+          </dialog>
+        </div>
+      )}
+    </Page>
+  );
+}
+
+export function InspirationPage() {
+  const { data: session } = useSessionQuery();
+  const connection = useQuery(signalConnectionQueryOptions(session?.user.id));
+  const [query, setQuery] = useState("");
+  const [results, setResults] = useState<
+    Awaited<ReturnType<typeof trpcClient.signals.searchPosts.mutate>>
+  >([]);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const [tab, setTab] = useState<"posts" | "media">("posts");
+  async function search() {
+    if (!query.trim()) return setError("请输入搜索关键词。");
+    setLoading(true);
+    setError("");
+    try {
+      const result = await trpcClient.signals.searchPosts.mutate({
+        query: query.trim(),
+        mediaOnly: tab === "media",
+      });
+      setResults(result);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "搜索失败，请稍后重试。",
+      );
+      setResults([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <Page title="Inspiration" subtitle="发现 X 上的近期内容，寻找创作灵感。">
+      <div className="studio-tabs">
+        <button
+          className={tab === "posts" ? "active" : ""}
+          onClick={() => {
+            setTab("posts");
+            setResults([]);
+          }}
+        >
+          Posts
+        </button>
+        <button
+          className={tab === "media" ? "active" : ""}
+          onClick={() => {
+            setTab("media");
+            setResults([]);
+          }}
+        >
+          Media
+        </button>
+      </div>
+      <div className="studio-search">
+        <input
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") void search();
+          }}
+          placeholder="Search by keyword…"
+        />
+        <button
+          className="studio-primary"
+          disabled={loading || !connection.data?.allowed}
+          onClick={() => void search()}
+        >
+          {loading ? "Searching…" : "Search"}
+        </button>
+      </div>
+      <p className="studio-muted">
+        使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
+        。每次查询会消耗 X API 额度。
+      </p>
+      {!connection.data?.allowed && (
+        <p className="studio-alert">请先在 Signals 页面连接并授权 X。</p>
+      )}
+      <Alert text={error} />
+      <div className="studio-masonry">
+        {results.map((post) => (
+          <article className="studio-card" key={post.id}>
+            <strong>{post.author.name}</strong>
+            <span className="studio-muted"> @{post.author.username}</span>
+            <p>{post.text}</p>
+            {post.media.map((item) => {
+              const src = item.url ?? item.preview_image_url;
+              return src ? (
+                <img
+                  key={item.media_key}
+                  className="studio-media"
+                  src={src}
+                  alt={`X ${item.type}`}
+                  loading="lazy"
+                />
+              ) : null;
+            })}
+            <small>
+              回复 {post.replies} · 转发 {post.reposts} · 喜欢 {post.likes}
+            </small>
+            <div className="studio-actions">
+              <a
+                href={`https://x.com/${post.author.username}/status/${post.id}`}
+                target="_blank"
+                rel="noreferrer"
+              >
+                View on X ↗
+              </a>
+              <Link to="/compose">Remix →</Link>
+            </div>
+          </article>
+        ))}
+      </div>
+      {results.length === 0 && !loading && !error && (
+        <div className="studio-empty">
+          搜索一个话题，查看来自 X 的{tab === "media" ? "媒体" : "帖子"}。
+        </div>
+      )}
+    </Page>
+  );
+}
+
+const interestGroups: Record<string, string[]> = {
+  Business: [
+    "Startups",
+    "Investing",
+    "Marketing",
+    "Sales",
+    "Leadership",
+    "Entrepreneurship",
+  ],
+  Technology: ["AI/ML", "Web3", "SaaS", "Cybersecurity", "DevOps", "Mobile"],
+  Creativity: ["Design", "Writing", "Photography", "Music", "Film", "Art"],
+  Lifestyle: [
+    "Fitness",
+    "Travel",
+    "Food",
+    "Fashion",
+    "Wellness",
+    "Mindfulness",
+  ],
+  Science: ["Physics", "Biology", "Space", "Climate", "Medicine", "Psychology"],
+  Finance: [
+    "Crypto",
+    "Stocks",
+    "Real Estate",
+    "Personal Finance",
+    "Economics",
+    "Trading",
+  ],
+};
+
+export function ContextPage() {
+  const { data, update, error } = useWorkspace();
+  const [product, setProduct] = useState("");
+  return (
+    <Page title="Context" subtitle="定义 AI 写什么、写给谁，以及你的表达方式。">
+      <section className="studio-card">
+        <h2>About You</h2>
+        <p className="studio-muted">为写作提供主题背景，不决定写作风格。</p>
+        <textarea
+          aria-label="About You"
+          maxLength={500}
+          rows={5}
+          value={data.about}
+          onChange={(e) =>
+            update((current) => ({ ...current, about: e.target.value }))
+          }
+        />
+        <small>{data.about.length}/500 characters</small>
+      </section>
+      <section className="studio-card">
+        <h2>Style Guide</h2>
+        <p className="studio-muted">你的修改优先于自动生成内容。</p>
+        <label>
+          Audience
+          <textarea
+            rows={4}
+            maxLength={600}
+            value={data.audience}
+            onChange={(e) =>
+              update((current) => ({ ...current, audience: e.target.value }))
+            }
+          />
+        </label>
+        <small>{data.audience.length}/600</small>
+        <label>
+          Style & Vocabulary
+          <textarea
+            rows={5}
+            maxLength={1200}
+            value={data.vocabulary}
+            onChange={(e) =>
+              update((current) => ({ ...current, vocabulary: e.target.value }))
+            }
+          />
+        </label>
+      </section>
+      <section className="studio-card">
+        <h2>Your Products</h2>
+        <div className="studio-inline">
+          <input
+            aria-label="产品名称"
+            value={product}
+            onChange={(e) => setProduct(e.target.value)}
+            placeholder="你正在构建的产品"
+          />
+          <button
+            className="studio-primary"
+            onClick={() => {
+              if (product.trim()) {
+                update((current) => ({
+                  ...current,
+                  products: [...current.products, product.trim()],
+                }));
+                setProduct("");
+              }
+            }}
+          >
+            Add product
+          </button>
+        </div>
+        {data.products.length === 0 && (
+          <p className="studio-muted">No products added yet</p>
+        )}
+        <div className="studio-chips">
+          {data.products.map((item, index) => (
+            <button
+              key={`${item}-${index}`}
+              onClick={() =>
+                update((current) => ({
+                  ...current,
+                  products: current.products.filter((_, i) => i !== index),
+                }))
+              }
+            >
+              {item} ×
+            </button>
+          ))}
+        </div>
+      </section>
+      <section className="studio-card">
+        <h2>Your Interests</h2>
+        <p className="studio-muted">决定哪些内容激发你的灵感。</p>
+        {Object.entries(interestGroups).map(([group, items]) => (
+          <div key={group}>
+            <h3>{group}</h3>
+            <div className="studio-chips">
+              {items.map((item) => (
+                <button
+                  key={item}
+                  aria-pressed={data.interests.includes(item)}
+                  className={data.interests.includes(item) ? "selected" : ""}
+                  onClick={() =>
+                    update((current) => ({
+                      ...current,
+                      interests: current.interests.includes(item)
+                        ? current.interests.filter((value) => value !== item)
+                        : [...current.interests, item],
+                    }))
+                  }
+                >
+                  {item}
+                </button>
+              ))}
+            </div>
+          </div>
+        ))}
+      </section>
+      <Alert text={error} />
+    </Page>
+  );
+}
+
+export function ContactsPage() {
+  const { data, update, error } = useWorkspace();
+  const [handle, setHandle] = useState("");
+  const [name, setName] = useState("");
+  const [note, setNote] = useState("");
+  const [filter, setFilter] = useState("all");
+  function add() {
+    const cleaned = handle.trim().replace(/^@/, "");
+    if (!/^[a-zA-Z0-9_]{1,15}$/.test(cleaned)) return;
+    update((current) => ({
+      ...current,
+      contacts: current.contacts.some(
+        (person) => person.handle.toLowerCase() === cleaned.toLowerCase(),
+      )
+        ? current.contacts
+        : [
+            {
+              id: newId(),
+              handle: cleaned,
+              name: name.trim() || cleaned,
+              note: note.trim(),
+              status: "new",
+            },
+            ...current.contacts,
+          ],
+    }));
+    setHandle("");
+    setName("");
+    setNote("");
+  }
+  return (
+    <Page title="Contacts" subtitle="整理值得跟进的 X 联系人。">
+      <section className="studio-card">
+        <h2>Add contact</h2>
+        <div className="studio-form-grid">
+          <input
+            aria-label="X handle"
+            placeholder="@ handle"
+            value={handle}
+            onChange={(e) => setHandle(e.target.value)}
+          />
+          <input
+            aria-label="Name"
+            placeholder="Name"
+            value={name}
+            onChange={(e) => setName(e.target.value)}
+          />
+          <input
+            aria-label="Note"
+            placeholder="为什么值得跟进"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
+          <button className="studio-primary" onClick={add}>
+            Add
+          </button>
+        </div>
+      </section>
+      <section className="studio-card">
+        <div className="studio-section-head">
+          <h2>All contacts · {data.contacts.length}</h2>
+          <select
+            aria-label="筛选联系人"
+            value={filter}
+            onChange={(e) => setFilter(e.target.value)}
+          >
+            <option value="all">All</option>
+            <option value="new">New</option>
+            <option value="qualified">Qualified</option>
+            <option value="contacted">Contacted</option>
+            <option value="archived">Archived</option>
+          </select>
+        </div>
+        {data.contacts
+          .filter((contact) => filter === "all" || contact.status === filter)
+          .map((contact) => (
+            <article className="studio-row" key={contact.id}>
+              <div>
+                <strong>{contact.name}</strong>{" "}
+                <a
+                  href={`https://x.com/${contact.handle}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  @{contact.handle} ↗
+                </a>
+                <p>{contact.note}</p>
+              </div>
+              <div className="studio-inline">
+                <select
+                  aria-label={`${contact.handle} 的状态`}
+                  value={contact.status}
+                  onChange={(e) =>
+                    update((current) => ({
+                      ...current,
+                      contacts: current.contacts.map((item) =>
+                        item.id === contact.id
+                          ? {
+                              ...item,
+                              status: e.target.value as typeof item.status,
+                            }
+                          : item,
+                      ),
+                    }))
+                  }
+                >
+                  <option value="new">New</option>
+                  <option value="qualified">Qualified</option>
+                  <option value="contacted">Contacted</option>
+                  <option value="archived">Archived</option>
+                </select>
+                <button
+                  className="studio-link danger"
+                  onClick={() =>
+                    update((current) => ({
+                      ...current,
+                      contacts: current.contacts.filter(
+                        (item) => item.id !== contact.id,
+                      ),
+                    }))
+                  }
+                >
+                  删除
+                </button>
+              </div>
+            </article>
+          ))}
+        {data.contacts.length === 0 && (
+          <p className="studio-muted">
+            还没有联系人。可以手动添加，或从 Signals 收集线索。
+          </p>
+        )}
+      </section>
+      <Alert text={error} />
+    </Page>
+  );
+}
+
+export function DmsPage() {
+  const { data, update, error } = useWorkspace();
+  const [selected, setSelected] = useState<string[]>([]);
+  const [message, setMessage] = useState("");
+  const [notice, setNotice] = useState("");
+  function queue() {
+    if (!selected.length || !message.trim())
+      return setNotice("请选择收件人并填写消息。");
+    if (
+      update((current) => ({
+        ...current,
+        messages: [
+          {
+            id: newId(),
+            recipients: selected,
+            text: message.trim(),
+            createdAt: new Date().toISOString(),
+            status: "pending",
+          },
+          ...current.messages,
+        ],
+      }))
+    ) {
+      setMessage("");
+      setSelected([]);
+      setNotice("已保存到待发送列表。当前不会自动发送私信。");
+    }
+  }
+  const preview = data.contacts.find((contact) => contact.id === selected[0]);
+  return (
+    <Page title="Direct Messages" subtitle="准备个性化私信，发送前逐条确认。">
+      <div className="studio-grid-2">
+        <section className="studio-card">
+          <h2>Recipients</h2>
+          <div className="studio-contact-picker">
+            {data.contacts.map((contact) => (
+              <label key={contact.id}>
+                <input
+                  type="checkbox"
+                  checked={selected.includes(contact.id)}
+                  onChange={() =>
+                    setSelected((current) =>
+                      current.includes(contact.id)
+                        ? current.filter((id) => id !== contact.id)
+                        : [...current, contact.id],
+                    )
+                  }
+                />
+                {contact.name} @{contact.handle}
+              </label>
+            ))}
+          </div>
+          {data.contacts.length === 0 && (
+            <p className="studio-muted">先到 Contacts 添加联系人。</p>
+          )}
+          <label>
+            Message
+            <textarea
+              rows={7}
+              value={message}
+              onChange={(e) => setMessage(e.target.value)}
+              placeholder="Hey [first], thanks for engaging…"
+            />
+          </label>
+          <p className="studio-muted">可用变量：[name] [first] [handle]</p>
+          <button className="studio-primary" onClick={queue}>
+            保存到待发送
+          </button>
+          <Alert text={notice || error} />
+        </section>
+        <section className="studio-card">
+          <h2>Preview</h2>
+          <div className="studio-post-preview">
+            <strong>{preview?.name || "收件人"}</strong>
+            <p>
+              {message
+                .replaceAll("[name]", preview?.name || "姓名")
+                .replaceAll("[first]", preview?.name.split(" ")[0] || "名字")
+                .replaceAll("[handle]", preview?.handle || "handle") ||
+                "Your message will appear here…"}
+            </p>
+          </div>
+          <p className="studio-muted">
+            只有对方允许接收私信且已同意联系，才能实际发送。
+          </p>
+        </section>
+      </div>
+      <section className="studio-card">
+        <h2>Pending DMs · {data.messages.length}</h2>
+        {data.messages.length === 0 && (
+          <p className="studio-muted">No DMs prepared yet.</p>
+        )}
+        {data.messages.map((item) => (
+          <article className="studio-row" key={item.id}>
+            <div>
+              <strong>
+                {item.recipients.length} 位收件人 ·{" "}
+                {item.status === "paused" ? "已暂停" : "待发送"}
+              </strong>
+              <p>{item.text}</p>
+            </div>
+            <div className="studio-inline">
+              <button
+                className="studio-link"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    messages: current.messages.map((entry) =>
+                      entry.id === item.id
+                        ? {
+                            ...entry,
+                            status:
+                              entry.status === "paused" ? "pending" : "paused",
+                          }
+                        : entry,
+                    ),
+                  }))
+                }
+              >
+                {item.status === "paused" ? "恢复" : "暂停"}
+              </button>
+              <button
+                className="studio-link danger"
+                onClick={() =>
+                  update((current) => ({
+                    ...current,
+                    messages: current.messages.filter(
+                      (entry) => entry.id !== item.id,
+                    ),
+                  }))
+                }
+              >
+                清除
+              </button>
+            </div>
+          </article>
+        ))}
+      </section>
+    </Page>
+  );
+}
+
+export function AnalyticsPage() {
+  const { data } = useWorkspace();
+  const [metrics, setMetrics] = useState<Awaited<
+    ReturnType<typeof trpcClient.signals.analytics.mutate>
+  > | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState("");
+  const counts = {
+    drafts: data.posts.filter((post) => post.status === "draft").length,
+    scheduled: data.posts.filter((post) => post.status === "scheduled").length,
+    review: data.posts.filter((post) => post.status === "review").length,
+  };
+  function exportData() {
+    const blob = new Blob(
+      [
+        JSON.stringify(
+          {
+            generatedAt: new Date().toISOString(),
+            counts,
+            metrics,
+            posts: data.posts,
+          },
+          null,
+          2,
+        ),
+      ],
+      { type: "application/json" },
+    );
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = "signal-agent-content.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+  async function load() {
+    setLoading(true);
+    setError("");
+    try {
+      setMetrics(await trpcClient.signals.analytics.mutate());
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "读取统计失败。");
+    } finally {
+      setLoading(false);
+    }
+  }
+  return (
+    <Page
+      title="Analytics"
+      subtitle="查看内容准备情况与账号表现。"
+      actions={
+        <div className="studio-inline">
+          <button
+            className="studio-secondary"
+            disabled={loading}
+            onClick={() => void load()}
+          >
+            {loading ? "Loading…" : "Load from X"}
+          </button>
+          <button className="studio-secondary" onClick={exportData}>
+            Export
+          </button>
+        </div>
+      }
+    >
+      <div className="studio-stats">
+        <div className="studio-stat">
+          <strong>{counts.drafts}</strong>
+          <span>草稿</span>
+        </div>
+        <div className="studio-stat">
+          <strong>{counts.review}</strong>
+          <span>待审核</span>
+        </div>
+        <div className="studio-stat">
+          <strong>{counts.scheduled}</strong>
+          <span>已排期</span>
+        </div>
+      </div>
+      <Alert text={error} />
+      <section className="studio-card">
+        <h2>Follower Gain</h2>
+        {metrics ? (
+          <>
+            <strong className="studio-big-number">
+              {metrics.followers.toLocaleString()}
+            </strong>
+            <p className="studio-muted">
+              当前粉丝数。增长曲线需要连续记录历史数据。
+            </p>
+          </>
+        ) : (
+          <div className="studio-empty">
+            点击 Load from X 读取当前粉丝数。此操作会消耗 X API 额度。
+          </div>
+        )}
+      </section>
+      <section className="studio-card">
+        <h2>Posts that generated the most engagement</h2>
+        {metrics ? (
+          metrics.posts.length ? (
+            metrics.posts.map((post) => (
+              <article className="studio-row" key={post.id}>
+                <div>
+                  <p>{post.text}</p>
+                  <small>
+                    回复 {post.replies} · 转发 {post.reposts} · 喜欢{" "}
+                    {post.likes}
+                    {post.impressions === null
+                      ? ""
+                      : ` · 浏览 ${post.impressions}`}
+                  </small>
+                </div>
+                <a
+                  href={`https://x.com/i/status/${post.id}`}
+                  target="_blank"
+                  rel="noreferrer"
+                >
+                  View on X ↗
+                </a>
+              </article>
+            ))
+          ) : (
+            <div className="studio-empty">X 没有返回近期帖子。</div>
+          )
+        ) : (
+          <div className="studio-empty">读取 X 统计后显示表现最佳的帖子。</div>
+        )}
+      </section>
+    </Page>
+  );
+}

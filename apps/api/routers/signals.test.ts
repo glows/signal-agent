@@ -122,4 +122,27 @@ describe("per-user OAuth connection", () => {
       spy.mockRestore();
     }
   });
+  it("does not publish with a read-only X grant", async () => {
+    await database.db
+      .insert(user)
+      .values({ id: "u", name: "A", email: "a@example.com" });
+    await database.db.insert(identity).values({
+      id: "x-a",
+      userId: "u",
+      providerId: "twitter",
+      accountId: "my-x",
+      accessToken: "secret",
+      refreshToken: "refresh",
+      scope: "tweet.read,users.read,list.read,offline.access",
+    });
+    const spy = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(
+        createCaller(context(true)).publish({ text: "Hello" }),
+      ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

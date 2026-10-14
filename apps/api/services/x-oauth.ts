@@ -37,6 +37,7 @@ export async function xOAuthConnection(ctx: TRPCContext, userId: string) {
     userId,
     xAccountId: account?.accountId ?? null,
     missingScopes,
+    canPublish: missingScopes.length === 0 && scopes.includes("tweet.write"),
     maxPostsPerRun: Number.isFinite(requested)
       ? Math.min(100, Math.max(30, Math.floor(requested)))
       : 30,

@@ -12,10 +12,19 @@ import { Route as rootRouteImport } from './../routes/__root'
 import { Route as appRouteRouteImport } from './../routes/(app)/route'
 import { Route as SignalDemoRouteImport } from './../routes/signal-demo'
 import { Route as appIndexRouteImport } from './../routes/(app)/index'
+import { Route as appAccountRouteImport } from './../routes/(app)/account'
+import { Route as appAnalyticsRouteImport } from './../routes/(app)/analytics'
 import { Route as appBriefRouteImport } from './../routes/(app)/brief'
+import { Route as appComposeRouteImport } from './../routes/(app)/compose'
+import { Route as appContactsRouteImport } from './../routes/(app)/contacts'
+import { Route as appContextRouteImport } from './../routes/(app)/context'
+import { Route as appDmsRouteImport } from './../routes/(app)/dms'
+import { Route as appInspirationRouteImport } from './../routes/(app)/inspiration'
 import { Route as appMembersRouteImport } from './../routes/(app)/members'
+import { Route as appQueueRouteImport } from './../routes/(app)/queue'
 import { Route as appSettingsRouteImport } from './../routes/(app)/settings'
 import { Route as appSignalsRouteImport } from './../routes/(app)/signals'
+import { Route as appWorkersRouteImport } from './../routes/(app)/workers'
 import { Route as authLoginRouteImport } from './../routes/(auth)/login'
 import { Route as authSignupRouteImport } from './../routes/(auth)/signup'
 
@@ -33,14 +42,54 @@ const appIndexRoute = appIndexRouteImport.update({
   path: '/',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appAccountRoute = appAccountRouteImport.update({
+  id: '/account',
+  path: '/account',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appAnalyticsRoute = appAnalyticsRouteImport.update({
+  id: '/analytics',
+  path: '/analytics',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appBriefRoute = appBriefRouteImport.update({
   id: '/brief',
   path: '/brief',
   getParentRoute: () => appRouteRoute,
 } as any)
+const appComposeRoute = appComposeRouteImport.update({
+  id: '/compose',
+  path: '/compose',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContactsRoute = appContactsRouteImport.update({
+  id: '/contacts',
+  path: '/contacts',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appContextRoute = appContextRouteImport.update({
+  id: '/context',
+  path: '/context',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appDmsRoute = appDmsRouteImport.update({
+  id: '/dms',
+  path: '/dms',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appInspirationRoute = appInspirationRouteImport.update({
+  id: '/inspiration',
+  path: '/inspiration',
+  getParentRoute: () => appRouteRoute,
+} as any)
 const appMembersRoute = appMembersRouteImport.update({
   id: '/members',
   path: '/members',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appQueueRoute = appQueueRouteImport.update({
+  id: '/queue',
+  path: '/queue',
   getParentRoute: () => appRouteRoute,
 } as any)
 const appSettingsRoute = appSettingsRouteImport.update({
@@ -51,6 +100,11 @@ const appSettingsRoute = appSettingsRouteImport.update({
 const appSignalsRoute = appSignalsRouteImport.update({
   id: '/signals',
   path: '/signals',
+  getParentRoute: () => appRouteRoute,
+} as any)
+const appWorkersRoute = appWorkersRouteImport.update({
+  id: '/workers',
+  path: '/workers',
   getParentRoute: () => appRouteRoute,
 } as any)
 const authLoginRoute = authLoginRouteImport.update({
@@ -66,20 +120,38 @@ const authSignupRoute = authSignupRouteImport.update({
 
 export interface FileRoutesByFullPath {
   '/signal-demo': typeof SignalDemoRoute
+  '/account': typeof appAccountRoute
+  '/analytics': typeof appAnalyticsRoute
   '/brief': typeof appBriefRoute
+  '/compose': typeof appComposeRoute
+  '/contacts': typeof appContactsRoute
+  '/context': typeof appContextRoute
+  '/dms': typeof appDmsRoute
+  '/inspiration': typeof appInspirationRoute
   '/members': typeof appMembersRoute
+  '/queue': typeof appQueueRoute
   '/settings': typeof appSettingsRoute
   '/signals': typeof appSignalsRoute
+  '/workers': typeof appWorkersRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
 }
 export interface FileRoutesByTo {
   '/signal-demo': typeof SignalDemoRoute
+  '/account': typeof appAccountRoute
+  '/analytics': typeof appAnalyticsRoute
   '/brief': typeof appBriefRoute
+  '/compose': typeof appComposeRoute
+  '/contacts': typeof appContactsRoute
+  '/context': typeof appContextRoute
+  '/dms': typeof appDmsRoute
+  '/inspiration': typeof appInspirationRoute
   '/members': typeof appMembersRoute
+  '/queue': typeof appQueueRoute
   '/settings': typeof appSettingsRoute
   '/signals': typeof appSignalsRoute
+  '/workers': typeof appWorkersRoute
   '/login': typeof authLoginRoute
   '/signup': typeof authSignupRoute
   '/': typeof appIndexRoute
@@ -88,10 +160,19 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/(app)': typeof appRouteRouteWithChildren
   '/signal-demo': typeof SignalDemoRoute
+  '/(app)/account': typeof appAccountRoute
+  '/(app)/analytics': typeof appAnalyticsRoute
   '/(app)/brief': typeof appBriefRoute
+  '/(app)/compose': typeof appComposeRoute
+  '/(app)/contacts': typeof appContactsRoute
+  '/(app)/context': typeof appContextRoute
+  '/(app)/dms': typeof appDmsRoute
+  '/(app)/inspiration': typeof appInspirationRoute
   '/(app)/members': typeof appMembersRoute
+  '/(app)/queue': typeof appQueueRoute
   '/(app)/settings': typeof appSettingsRoute
   '/(app)/signals': typeof appSignalsRoute
+  '/(app)/workers': typeof appWorkersRoute
   '/(auth)/login': typeof authLoginRoute
   '/(auth)/signup': typeof authSignupRoute
   '/(app)/': typeof appIndexRoute
@@ -100,20 +181,38 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/signal-demo'
+    | '/account'
+    | '/analytics'
     | '/brief'
+    | '/compose'
+    | '/contacts'
+    | '/context'
+    | '/dms'
+    | '/inspiration'
     | '/members'
+    | '/queue'
     | '/settings'
     | '/signals'
+    | '/workers'
     | '/login'
     | '/signup'
     | '/'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/signal-demo'
+    | '/account'
+    | '/analytics'
     | '/brief'
+    | '/compose'
+    | '/contacts'
+    | '/context'
+    | '/dms'
+    | '/inspiration'
     | '/members'
+    | '/queue'
     | '/settings'
     | '/signals'
+    | '/workers'
     | '/login'
     | '/signup'
     | '/'
@@ -121,10 +220,19 @@ export interface FileRouteTypes {
     | '__root__'
     | '/(app)'
     | '/signal-demo'
+    | '/(app)/account'
+    | '/(app)/analytics'
     | '/(app)/brief'
+    | '/(app)/compose'
+    | '/(app)/contacts'
+    | '/(app)/context'
+    | '/(app)/dms'
+    | '/(app)/inspiration'
     | '/(app)/members'
+    | '/(app)/queue'
     | '/(app)/settings'
     | '/(app)/signals'
+    | '/(app)/workers'
     | '/(auth)/login'
     | '/(auth)/signup'
     | '/(app)/'
@@ -160,6 +268,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appIndexRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/account': {
+      id: '/(app)/account'
+      path: '/account'
+      fullPath: '/account'
+      preLoaderRoute: typeof appAccountRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/analytics': {
+      id: '/(app)/analytics'
+      path: '/analytics'
+      fullPath: '/analytics'
+      preLoaderRoute: typeof appAnalyticsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/brief': {
       id: '/(app)/brief'
       path: '/brief'
@@ -167,11 +289,53 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof appBriefRouteImport
       parentRoute: typeof appRouteRoute
     }
+    '/(app)/compose': {
+      id: '/(app)/compose'
+      path: '/compose'
+      fullPath: '/compose'
+      preLoaderRoute: typeof appComposeRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/contacts': {
+      id: '/(app)/contacts'
+      path: '/contacts'
+      fullPath: '/contacts'
+      preLoaderRoute: typeof appContactsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/context': {
+      id: '/(app)/context'
+      path: '/context'
+      fullPath: '/context'
+      preLoaderRoute: typeof appContextRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/dms': {
+      id: '/(app)/dms'
+      path: '/dms'
+      fullPath: '/dms'
+      preLoaderRoute: typeof appDmsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/inspiration': {
+      id: '/(app)/inspiration'
+      path: '/inspiration'
+      fullPath: '/inspiration'
+      preLoaderRoute: typeof appInspirationRouteImport
+      parentRoute: typeof appRouteRoute
+    }
     '/(app)/members': {
       id: '/(app)/members'
       path: '/members'
       fullPath: '/members'
       preLoaderRoute: typeof appMembersRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/queue': {
+      id: '/(app)/queue'
+      path: '/queue'
+      fullPath: '/queue'
+      preLoaderRoute: typeof appQueueRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(app)/settings': {
@@ -186,6 +350,13 @@ declare module '@tanstack/react-router' {
       path: '/signals'
       fullPath: '/signals'
       preLoaderRoute: typeof appSignalsRouteImport
+      parentRoute: typeof appRouteRoute
+    }
+    '/(app)/workers': {
+      id: '/(app)/workers'
+      path: '/workers'
+      fullPath: '/workers'
+      preLoaderRoute: typeof appWorkersRouteImport
       parentRoute: typeof appRouteRoute
     }
     '/(auth)/login': {
@@ -206,18 +377,36 @@ declare module '@tanstack/react-router' {
 }
 
 interface appRouteRouteChildren {
+  appAccountRoute: typeof appAccountRoute
+  appAnalyticsRoute: typeof appAnalyticsRoute
   appBriefRoute: typeof appBriefRoute
+  appComposeRoute: typeof appComposeRoute
+  appContactsRoute: typeof appContactsRoute
+  appContextRoute: typeof appContextRoute
+  appDmsRoute: typeof appDmsRoute
+  appInspirationRoute: typeof appInspirationRoute
   appMembersRoute: typeof appMembersRoute
+  appQueueRoute: typeof appQueueRoute
   appSettingsRoute: typeof appSettingsRoute
   appSignalsRoute: typeof appSignalsRoute
+  appWorkersRoute: typeof appWorkersRoute
   appIndexRoute: typeof appIndexRoute
 }
 
 const appRouteRouteChildren: appRouteRouteChildren = {
+  appAccountRoute: appAccountRoute,
+  appAnalyticsRoute: appAnalyticsRoute,
   appBriefRoute: appBriefRoute,
+  appComposeRoute: appComposeRoute,
+  appContactsRoute: appContactsRoute,
+  appContextRoute: appContextRoute,
+  appDmsRoute: appDmsRoute,
+  appInspirationRoute: appInspirationRoute,
   appMembersRoute: appMembersRoute,
+  appQueueRoute: appQueueRoute,
   appSettingsRoute: appSettingsRoute,
   appSignalsRoute: appSignalsRoute,
+  appWorkersRoute: appWorkersRoute,
   appIndexRoute: appIndexRoute,
 }
 

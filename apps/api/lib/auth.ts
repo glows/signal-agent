@@ -87,7 +87,13 @@ export function socialProviders(env: AuthEnv) {
   return {
     ...googleProvider(env),
     ...(clientId && clientSecret
-      ? { twitter: { clientId, clientSecret, scope: ["list.read"] } }
+      ? {
+          twitter: {
+            clientId,
+            clientSecret,
+            scope: ["list.read", "tweet.write"],
+          },
+        }
       : {}),
   };
 }

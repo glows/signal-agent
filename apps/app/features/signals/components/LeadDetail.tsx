@@ -17,11 +17,13 @@ export function LeadDetail({
   lead,
   agentName,
   onClose,
+  onAddContact,
 }: {
   design: "utility" | "nature";
   lead: Lead;
   agentName: string;
   onClose: () => void;
+  onAddContact?: () => void;
 }) {
   return (
     <Dialog
@@ -117,6 +119,11 @@ export function LeadDetail({
             <h3>关联 Agent</h3>
             <p>{agentName}</p>
           </section>
+          {onAddContact && (
+            <button className="primary-button" onClick={onAddContact}>
+              加入 Contacts
+            </button>
+          )}
           <div className="detail-note">
             {lead.dataSource === "x"
               ? "真实 X 数据 · 规则评分"
