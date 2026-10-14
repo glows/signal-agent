@@ -1,0 +1,18 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "signal-agent-preview-web",
+  "main": "./worker.ts",
+  "compatibility_date": "2026-08-08",
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./dist",
+    "binding": "ASSETS",
+    "run_worker_first": ["/"]
+  },
+  "services": [
+    { "binding": "APP_SERVICE", "service": "signal-agent-preview-app" },
+    { "binding": "API_SERVICE", "service": "signal-agent-preview-api" }
+  ],
+  "vars": { "ENVIRONMENT": "staging" }
+}
