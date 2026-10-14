@@ -5,3 +5,4 @@ export * from "./passkey";
 export * from "./subscription";
 export * from "./user";
 export * from "./acquisition";
+export * from "./studio-state";

@@ -11,6 +11,7 @@ import { acquisitionRouter } from "../routers/acquisition.js";
 import { billingRouter } from "../routers/billing.js";
 import { configRouter } from "../routers/config.js";
 import { signalsRouter } from "../routers/signals.js";
+import { studioRouter } from "../routers/studio.js";
 import type { AppContext } from "./context.js";
 import { router } from "./trpc.js";
 
@@ -19,6 +20,7 @@ const appRouter = router({
   billing: billingRouter,
   config: configRouter,
   signals: signalsRouter,
+  studio: studioRouter,
   acquisition: acquisitionRouter,
 });
 

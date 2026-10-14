@@ -15,6 +15,13 @@
       "when": 1791944375033,
       "tag": "0001_brief_mojo",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1791976230714,
+      "tag": "0002_studio-state",
+      "breakpoints": true
     }
   ]
 }
