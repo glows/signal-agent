@@ -814,27 +814,30 @@ export function InspirationPage() {
   >([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
-  const [tab, setTab] = useState<"posts" | "media">("posts");
+  const [tab, setTab] = useState<"posts" | "media" | "saved">("posts");
   const [period, setPeriod] = useState<"all" | "day" | "week">("week");
   const [account, setAccount] = useState("");
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   const [notice, setNotice] = useState("");
   const [searchedAt, setSearchedAt] = useState(0);
-  const shown = results.filter((post) => {
-    if (bookmarkedOnly && !data.bookmarkedPostIds.includes(post.id))
-      return false;
-    if (
-      account.trim() &&
-      !post.author.username
-        .toLowerCase()
-        .includes(account.trim().replace(/^@/, "").toLowerCase())
-    )
-      return false;
-    if (period === "all") return true;
-    if (!post.createdAt) return false;
-    const age = searchedAt - new Date(post.createdAt).getTime();
-    return age >= 0 && age <= (period === "day" ? 1 : 7) * 86400000;
-  });
+  const shown = (tab === "saved" ? data.savedInspiration : results).filter(
+    (post) => {
+      if (tab === "saved") return true;
+      if (bookmarkedOnly && !data.bookmarkedPostIds.includes(post.id))
+        return false;
+      if (
+        account.trim() &&
+        !post.author.username
+          .toLowerCase()
+          .includes(account.trim().replace(/^@/, "").toLowerCase())
+      )
+        return false;
+      if (period === "all") return true;
+      if (!post.createdAt) return false;
+      const age = searchedAt - new Date(post.createdAt).getTime();
+      return age >= 0 && age <= (period === "day" ? 1 : 7) * 86400000;
+    },
+  );
   async function search() {
     if (!query.trim()) return setError("请输入搜索关键词。");
     setLoading(true);
@@ -876,54 +879,70 @@ export function InspirationPage() {
         >
           Media
         </button>
-      </div>
-      <div className="studio-search">
-        <input
-          value={query}
-          onChange={(e) => setQuery(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") void search();
-          }}
-          placeholder="Search by keyword…"
-        />
         <button
-          className="studio-primary"
-          disabled={loading || !connection.data?.allowed}
-          onClick={() => void search()}
+          className={tab === "saved" ? "active" : ""}
+          onClick={() => setTab("saved")}
         >
-          {loading ? "Searching…" : "Search"}
+          Saved · {data.savedInspiration.length}
         </button>
       </div>
-      <div className="studio-inline studio-filters">
-        <select
-          aria-label="时间范围"
-          value={period}
-          onChange={(e) => setPeriod(e.target.value as typeof period)}
-        >
-          <option value="day">过去 24 小时</option>
-          <option value="week">过去一周</option>
-          <option value="all">全部结果</option>
-        </select>
-        <input
-          aria-label="筛选 X 账号"
-          value={account}
-          onChange={(e) => setAccount(e.target.value)}
-          placeholder="筛选账号 @handle"
-        />
-        <label className="studio-inline">
+      {tab !== "saved" && (
+        <div className="studio-search">
           <input
-            type="checkbox"
-            checked={bookmarkedOnly}
-            onChange={(e) => setBookmarkedOnly(e.target.checked)}
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") void search();
+            }}
+            placeholder="Search by keyword…"
           />
-          仅收藏
-        </label>
-      </div>
+          <button
+            className="studio-primary"
+            disabled={loading || !connection.data?.allowed}
+            onClick={() => void search()}
+          >
+            {loading ? "Searching…" : "Search"}
+          </button>
+        </div>
+      )}
+      {tab !== "saved" && (
+        <div className="studio-inline studio-filters">
+          <select
+            aria-label="时间范围"
+            value={period}
+            onChange={(e) => setPeriod(e.target.value as typeof period)}
+          >
+            <option value="day">过去 24 小时</option>
+            <option value="week">过去一周</option>
+            <option value="all">全部结果</option>
+          </select>
+          <input
+            aria-label="筛选 X 账号"
+            value={account}
+            onChange={(e) => setAccount(e.target.value)}
+            placeholder="筛选账号 @handle"
+          />
+          <label className="studio-inline">
+            <input
+              type="checkbox"
+              checked={bookmarkedOnly}
+              onChange={(e) => setBookmarkedOnly(e.target.checked)}
+            />
+            仅收藏
+          </label>
+        </div>
+      )}
       <p className="studio-muted">
-        使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
-        。每次查询会消耗 X API 额度；筛选仅作用于本次返回的最多 30 条结果。
+        {tab === "saved" ? (
+          "收藏的帖子保存在你的账号中，可以从这里重新打开或用于创作。"
+        ) : (
+          <>
+            使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
+            。每次查询会消耗 X API 额度；筛选仅作用于本次返回的最多 30 条结果。
+          </>
+        )}
       </p>
-      {!connection.data?.allowed && (
+      {tab !== "saved" && !connection.data?.allowed && (
         <p className="studio-alert">请先在 Signals 页面连接并授权 X。</p>
       )}
       <Alert text={error || storageError || notice} />
@@ -990,6 +1009,18 @@ export function InspirationPage() {
                     )
                       ? current.bookmarkedPostIds.filter((id) => id !== post.id)
                       : [...current.bookmarkedPostIds, post.id],
+                    savedInspiration: current.bookmarkedPostIds.includes(
+                      post.id,
+                    )
+                      ? current.savedInspiration.filter(
+                          (item) => item.id !== post.id,
+                        )
+                      : [
+                          post,
+                          ...current.savedInspiration.filter(
+                            (item) => item.id !== post.id,
+                          ),
+                        ],
                   }))
                 }
               >
@@ -999,12 +1030,17 @@ export function InspirationPage() {
           </article>
         ))}
       </div>
-      {results.length > 0 && shown.length === 0 && (
+      {tab !== "saved" && results.length > 0 && shown.length === 0 && (
         <div className="studio-empty">本次结果中没有符合筛选条件的帖子。</div>
       )}
-      {results.length === 0 && !loading && !error && (
+      {tab !== "saved" && results.length === 0 && !loading && !error && (
         <div className="studio-empty">
           搜索一个话题，查看来自 X 的{tab === "media" ? "媒体" : "帖子"}。
+        </div>
+      )}
+      {tab === "saved" && data.savedInspiration.length === 0 && (
+        <div className="studio-empty">
+          还没有收藏。搜索帖子后点击收藏即可保存到这里。
         </div>
       )}
     </Page>

@@ -42,6 +42,9 @@ export interface FollowerSnapshot {
   recordedAt: string;
   followers: number;
 }
+export type InspirationPost = Awaited<
+  ReturnType<typeof trpcClient.signals.searchPosts.mutate>
+>[number];
 export interface StudioData {
   version: 1;
   posts: StudioPost[];
@@ -55,6 +58,7 @@ export interface StudioData {
   interests: string[];
   products: string[];
   bookmarkedPostIds: string[];
+  savedInspiration: InspirationPost[];
   timezone: string;
   weekStart: "monday" | "sunday";
   textDirection: "ltr" | "rtl";
@@ -76,6 +80,7 @@ const empty: StudioData = {
   interests: [],
   products: [],
   bookmarkedPostIds: [],
+  savedInspiration: [],
   timezone: "Asia/Shanghai",
   weekStart: "monday",
   textDirection: "ltr",
@@ -112,6 +117,9 @@ function normalize(parsed: unknown): StudioData {
     bookmarkedPostIds: Array.isArray(value.bookmarkedPostIds)
       ? value.bookmarkedPostIds
       : [],
+    savedInspiration: Array.isArray(value.savedInspiration)
+      ? value.savedInspiration
+      : [],
   };
 }
 
@@ -142,7 +150,8 @@ function hasContent(data: StudioData) {
     data.vocabulary.length > 0 ||
     data.interests.length > 0 ||
     data.products.length > 0 ||
-    data.bookmarkedPostIds.length > 0
+    data.bookmarkedPostIds.length > 0 ||
+    data.savedInspiration.length > 0
   );
 }
 
