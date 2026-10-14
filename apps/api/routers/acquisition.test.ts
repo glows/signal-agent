@@ -1,5 +1,7 @@
+import { createInitialData } from "@repo/core/signals";
 import { acquisition, user } from "@repo/db";
 import { createTestDatabase } from "@repo/db/testing";
+import { eq } from "drizzle-orm";
 import { afterAll, beforeEach, expect, it } from "vitest";
 
 import type { TRPCContext } from "../lib/context";
@@ -69,4 +71,39 @@ it("schedules once at the next Beijing 09:00", () => {
   expect(nextDailyRun(new Date("2026-10-14T01:00:00Z")).toISOString()).toBe(
     "2026-10-15T01:00:00.000Z",
   );
+});
+
+it("isolates reply drafts by owner and preserves review status", async () => {
+  const ownerCtx = await context("owner@test.com");
+  const owner = caller(ownerCtx);
+  const other = caller(await context("other@test.com"));
+  await owner.save(config);
+  const lead = {
+    ...createInitialData().leads[0],
+    review: "contacted" as const,
+    suggestion: "Reviewed",
+  };
+  await db
+    .update(acquisition)
+    .set({ leads: [lead] })
+    .where(eq(acquisition.userId, ownerCtx.user!.id));
+  const input = {
+    id: lead.id,
+    tone: "professional" as const,
+    thoughts: "My real thoughts",
+  };
+  await expect(other.generateReply(input)).rejects.toMatchObject({
+    code: "NOT_FOUND",
+  });
+  await expect(
+    other.saveReply({ ...input, text: "Injected" }),
+  ).rejects.toMatchObject({ code: "NOT_FOUND" });
+  const draft = await owner.generateReply(input);
+  expect(draft.method).toBe("template");
+  expect(draft.text).toContain("My real thoughts");
+  expect((await owner.state())?.leads[0].replyDraft).toBeUndefined();
+  await owner.saveReply({ ...input, text: "Human edited reply" });
+  const saved = (await owner.state())?.leads[0];
+  expect(saved?.replyDraft?.text).toBe("Human edited reply");
+  expect(saved?.review).toBe("contacted");
 });

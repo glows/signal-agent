@@ -14,6 +14,12 @@ import { user } from "./user";
 export type AcquisitionLead = Lead & {
   review: "new" | "follow_up" | "not_fit" | "contacted";
   suggestion: string;
+  replyDraft?: {
+    text: string;
+    tone: "professional" | "friendly" | "concise";
+    thoughts: string;
+    updatedAt: string;
+  };
 };
 export type AcquisitionRun = {
   id: string;

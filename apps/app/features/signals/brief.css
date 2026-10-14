@@ -202,3 +202,76 @@
     width: 100%;
   }
 }
+.reply-draft {
+  grid-column: 1/-1;
+  grid-row: 2;
+}
+.reply-editor {
+  margin-top: 16px;
+  padding: 24px;
+  background: var(--u-soft);
+  border-radius: 8px;
+}
+.reply-editor h3 {
+  font-size: 18px;
+  margin: 0 0 12px;
+}
+.reply-editor p,
+.reply-editor small {
+  font-size: 12px;
+  color: var(--u-muted);
+}
+.reply-editor label {
+  display: grid;
+  gap: 8px;
+  margin: 16px 0;
+  font-size: 14px;
+}
+.reply-editor textarea,
+.reply-editor select {
+  padding: 12px;
+  border: 1px solid var(--u-border);
+  border-radius: 8px;
+  background: var(--u-panel);
+  color: var(--u-ink);
+  width: 100%;
+  font-size: 16px;
+  resize: vertical;
+}
+.reply-editor .brief-actions {
+  margin-top: 16px;
+  align-items: center;
+}
+.reply-editor output {
+  display: block;
+  margin-top: 12px;
+  font-size: 14px;
+}
+.reply-editor [role="alert"] {
+  color: #b95e60;
+}
+.reply-replace {
+  border: 1px solid var(--u-border);
+  padding: 16px;
+  margin-top: 16px;
+  border-radius: 8px;
+}
+.reply-replace button {
+  margin-right: 8px;
+}
+.brief-lead > aside {
+  grid-column: 2;
+  grid-row: 1;
+}
+@media (max-width: 760px) {
+  .brief-lead > aside {
+    grid-column: 1;
+    grid-row: 2;
+  }
+  .reply-draft {
+    grid-row: 3;
+  }
+  .reply-editor {
+    padding: 16px;
+  }
+}

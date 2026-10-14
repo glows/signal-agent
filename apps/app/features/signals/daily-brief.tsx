@@ -5,6 +5,8 @@ import { useState } from "react";
 
 import { trpcClient } from "#lib/trpc";
 
+import { ReplyDraft } from "./reply-draft";
+
 import "../signals/styles.css";
 import "../signals/utility-theme.css";
 import "./brief.css";
@@ -372,6 +374,12 @@ export function DailyBrief() {
                         })}
                       </small>
                     </div>
+                    <ReplyDraft
+                      id={lead.id}
+                      name={lead.person.displayName}
+                      sourceUrl={lead.provenance.postUrl}
+                      saved={lead.replyDraft}
+                    />
                     <aside>
                       <strong>
                         {lead.score}

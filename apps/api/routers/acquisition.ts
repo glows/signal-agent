@@ -5,6 +5,7 @@ import { z } from "zod";
 
 import { protectedProcedure, router } from "../lib/trpc.js";
 import { nextDailyRun, runAcquisition } from "../services/acquisition.js";
+import { generateReplyDraft } from "../services/reply-drafts.js";
 const settings = z.object({
   product: z.string().trim().min(1).max(2000),
   agent: z.object({
@@ -24,7 +25,57 @@ const settings = z.object({
   enabled: z.boolean(),
   dailyLimit: z.union([z.literal(30), z.literal(60), z.literal(100)]),
 });
+const replyInput = z.object({
+  id: z.string().min(1),
+  tone: z.enum(["professional", "friendly", "concise"]),
+  thoughts: z.string().trim().max(1000),
+});
 export const acquisitionRouter = router({
+  generateReply: protectedProcedure
+    .input(replyInput)
+    .mutation(async ({ ctx, input }) => {
+      const row = await ctx.db.query.acquisition.findFirst({
+        where: eq(acquisition.userId, ctx.user.id),
+      });
+      const lead = row?.leads.find((item) => item.id === input.id);
+      if (!lead) throw new TRPCError({ code: "NOT_FOUND" });
+      return {
+        text: generateReplyDraft(
+          lead.provenance.source,
+          input.tone,
+          input.thoughts,
+        ),
+        method: "template" as const,
+      };
+    }),
+  saveReply: protectedProcedure
+    .input(replyInput.extend({ text: z.string().trim().min(1).max(2000) }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db.transaction(async (db) => {
+        const [row] = await db
+          .select()
+          .from(acquisition)
+          .where(eq(acquisition.userId, ctx.user.id))
+          .for("update");
+        if (!row || !row.leads.some((item) => item.id === input.id))
+          throw new TRPCError({ code: "NOT_FOUND" });
+        const replyDraft = {
+          text: input.text,
+          tone: input.tone,
+          thoughts: input.thoughts,
+          updatedAt: new Date().toISOString(),
+        };
+        await db
+          .update(acquisition)
+          .set({
+            leads: row.leads.map((item) =>
+              item.id === input.id ? { ...item, replyDraft } : item,
+            ),
+          })
+          .where(eq(acquisition.id, row.id));
+      });
+      return { saved: true };
+    }),
   state: protectedProcedure.query(
     async ({ ctx }) =>
       (await ctx.db.query.acquisition.findFirst({
