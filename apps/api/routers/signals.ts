@@ -138,7 +138,7 @@ export const signalsRouter = router({
     const token = await userXToken(ctx, ctx.user.id);
     const endpoints = [
       `https://api.x.com/2/users/${connection.xAccountId}?user.fields=public_metrics`,
-      `https://api.x.com/2/users/${connection.xAccountId}/tweets?max_results=30&tweet.fields=created_at,public_metrics`,
+      `https://api.x.com/2/users/${connection.xAccountId}/tweets?max_results=30&tweet.fields=created_at,public_metrics,referenced_tweets`,
     ];
     const payloads: unknown[] = [];
     for (const endpoint of endpoints) {
@@ -186,6 +186,9 @@ export const signalsRouter = router({
               id: z.string(),
               text: z.string(),
               created_at: z.string().optional(),
+              referenced_tweets: z
+                .array(z.object({ type: z.string() }))
+                .optional(),
               public_metrics: z
                 .object({
                   like_count: z.number().default(0),
@@ -206,21 +209,22 @@ export const signalsRouter = router({
       });
     return {
       followers: profile.data.data.public_metrics.followers_count,
-      posts: (timeline.data.data ?? [])
-        .map((post) => ({
-          id: post.id,
-          text: post.text,
-          createdAt: post.created_at ?? null,
-          likes: post.public_metrics?.like_count ?? 0,
-          replies: post.public_metrics?.reply_count ?? 0,
-          reposts: post.public_metrics?.repost_count ?? 0,
-          impressions: post.public_metrics?.impression_count ?? null,
-        }))
-        .sort(
-          (a, b) =>
-            b.likes + b.replies + b.reposts - (a.likes + a.replies + a.reposts),
-        )
-        .slice(0, 3),
+      posts: (timeline.data.data ?? []).map((post) => ({
+        id: post.id,
+        text: post.text,
+        createdAt: post.created_at ?? null,
+        kind: post.referenced_tweets?.some((ref) => ref.type === "replied_to")
+          ? ("reply" as const)
+          : post.referenced_tweets?.some((ref) => ref.type === "retweeted")
+            ? ("repost" as const)
+            : post.referenced_tweets?.some((ref) => ref.type === "quoted")
+              ? ("quote" as const)
+              : ("post" as const),
+        likes: post.public_metrics?.like_count ?? 0,
+        replies: post.public_metrics?.reply_count ?? 0,
+        reposts: post.public_metrics?.repost_count ?? 0,
+        impressions: post.public_metrics?.impression_count ?? null,
+      })),
     };
   }),
   searchPosts: protectedProcedure

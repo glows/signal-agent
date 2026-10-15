@@ -6,6 +6,11 @@ import { useSessionQuery } from "#lib/queries/session";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
 import { trpcClient } from "#lib/trpc";
 
+import {
+  analyticsPostsCsv,
+  selectAnalyticsPosts,
+  type AnalyticsTab,
+} from "./analytics";
 import { formatZonedDate, formatZonedInput, parseZonedInput } from "./schedule";
 import {
   newId,
@@ -1736,6 +1741,7 @@ export function AnalyticsPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [days, setDays] = useState(30);
+  const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("posts");
   const [asOf, setAsOf] = useState(() => Date.now());
   const cutoff = asOf - days * 24 * 60 * 60 * 1000;
   const history = data.followerHistory
@@ -1754,6 +1760,8 @@ export function AnalyticsPage() {
     metrics?.posts.filter(
       (post) => post.createdAt && Date.parse(post.createdAt) >= cutoff,
     ) ?? [];
+  const selectedPosts = selectAnalyticsPosts(visiblePosts, analyticsTab);
+  const topPosts = selectAnalyticsPosts(visiblePosts, "engaged").slice(0, 3);
   const followerValues = history.map((point) => point.followers);
   const followerMin = Math.min(...followerValues);
   const followerSpan = Math.max(...followerValues) - followerMin || 1;
@@ -1783,6 +1791,17 @@ export function AnalyticsPage() {
     const anchor = document.createElement("a");
     anchor.href = url;
     anchor.download = "signal-agent-content.json";
+    anchor.click();
+    URL.revokeObjectURL(url);
+  }
+  function exportCsv() {
+    const blob = new Blob([analyticsPostsCsv(selectedPosts)], {
+      type: "text/csv;charset=utf-8",
+    });
+    const url = URL.createObjectURL(blob);
+    const anchor = document.createElement("a");
+    anchor.href = url;
+    anchor.download = `signal-agent-posts-${days}d-${analyticsTab}.csv`;
     anchor.click();
     URL.revokeObjectURL(url);
   }
@@ -1832,8 +1851,15 @@ export function AnalyticsPage() {
           >
             {loading ? "Loading…" : "Load from X"}
           </button>
+          <button
+            className="studio-secondary"
+            disabled={!selectedPosts.length}
+            onClick={exportCsv}
+          >
+            Export CSV
+          </button>
           <button className="studio-secondary" onClick={exportData}>
-            Export
+            Export JSON
           </button>
         </div>
       }
@@ -1901,11 +1927,11 @@ export function AnalyticsPage() {
       <section className="studio-card">
         <h2>Posts that generated the most engagement</h2>
         <p className="studio-muted">
-          X 返回的近期热门帖子中，显示所选时间内发布的内容。
+          X 返回的近期帖子中，显示所选时间内互动最高的 3 条。
         </p>
         {metrics ? (
-          visiblePosts.length ? (
-            visiblePosts.map((post) => (
+          topPosts.length ? (
+            topPosts.map((post) => (
               <article className="studio-row" key={post.id}>
                 <div>
                   <p>{post.text}</p>
@@ -1932,6 +1958,90 @@ export function AnalyticsPage() {
         ) : (
           <div className="studio-empty">读取 X 统计后显示表现最佳的帖子。</div>
         )}
+      </section>
+      <section className="studio-card">
+        <h2>Post details</h2>
+        <div
+          className="studio-analytics-tabs"
+          role="tablist"
+          aria-label="Post categories"
+        >
+          {(
+            [
+              ["posts", "Posts"],
+              ["replies", "Replies"],
+              ["reposts", "Reposts"],
+              ["best", "Best posts"],
+              ["engaged", "Most engaged"],
+            ] as const
+          ).map(([value, label]) => (
+            <button
+              key={value}
+              type="button"
+              role="tab"
+              aria-selected={analyticsTab === value}
+              className={analyticsTab === value ? "active" : ""}
+              onClick={() => setAnalyticsTab(value)}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+        {selectedPosts.length ? (
+          <div className="studio-table-scroll">
+            <table className="studio-analytics-table">
+              <thead>
+                <tr>
+                  <th>Date</th>
+                  <th>Post</th>
+                  <th>Likes</th>
+                  <th>Replies</th>
+                  <th>Reposts</th>
+                  <th>Views</th>
+                  <th>Link</th>
+                </tr>
+              </thead>
+              <tbody>
+                {selectedPosts.map((post) => (
+                  <tr key={post.id}>
+                    <td>
+                      {post.createdAt
+                        ? new Date(post.createdAt).toLocaleDateString()
+                        : "—"}
+                    </td>
+                    <td>
+                      <span className="studio-analytics-post-text">
+                        {post.text}
+                      </span>
+                    </td>
+                    <td>{post.likes}</td>
+                    <td>{post.replies}</td>
+                    <td>{post.reposts}</td>
+                    <td>{post.impressions ?? "—"}</td>
+                    <td>
+                      <a
+                        href={`https://x.com/i/status/${post.id}`}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        View ↗
+                      </a>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div className="studio-empty">
+            {metrics
+              ? "所选时间和分类下没有帖子。"
+              : "读取 X 统计后显示帖子明细。"}
+          </div>
+        )}
+        <p className="studio-muted">
+          单次读取最多获取 X 最近 30 条帖子；CSV 导出当前时间范围和分类。
+        </p>
       </section>
     </Page>
   );
