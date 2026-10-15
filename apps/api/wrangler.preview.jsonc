@@ -8,6 +8,7 @@
   "triggers": { "crons": [] },
   "upload_source_maps": true,
   "observability": { "enabled": true },
+  "ai": { "binding": "AI" },
   "vars": {
     "ENVIRONMENT": "staging",
     "APP_NAME": "Signal Agent",

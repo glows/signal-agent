@@ -607,8 +607,57 @@ export function WorkersPage() {
   const { data, update, error } = useWorkspace();
   const [editing, setEditing] = useState<StudioWorker | null>(null);
   const [notice, setNotice] = useState("");
+  const [generatingId, setGeneratingId] = useState<string | null>(null);
   const [reviewWhen, setReviewWhen] = useState<Record<string, string>>({});
   const review = data.posts.filter((post) => post.status === "review");
+  async function generateWithAi(worker: StudioWorker) {
+    if (!worker.active) return setNotice("请先启用这个 Worker。");
+    if (generatingId) return;
+    setGeneratingId(worker.id);
+    setNotice("");
+    try {
+      const result = await trpcClient.studio.generateWorker.mutate({
+        topic: worker.topic || data.products[0] || data.about || "我的专业领域",
+        audience: data.audience,
+        about: data.about,
+        styleGuide: data.vocabulary,
+        instructions: worker.instructions,
+        voice: worker.voice,
+        count: worker.count,
+        noQuestions: data.writingRules.noQuestions,
+        noNumberedLists: data.writingRules.noNumberedLists,
+        examples: data.posts
+          .filter((post) => post.status === "published")
+          .slice(0, 5)
+          .map((post) => post.text),
+      });
+      const createdAt = new Date().toISOString();
+      const posts: StudioPost[] = result.drafts.map((text) => ({
+        id: newId(),
+        text: applyWritingRules(text, data.writingRules),
+        status: "review",
+        createdAt,
+        workerId: worker.id,
+        reviewBrief: `AI 生成 · 主题：${worker.topic || data.products[0] || "我的专业领域"}\n声音：${worker.voice}\n额外要求：${worker.instructions || "无"}`,
+      }));
+      if (posts.some((post) => !post.text))
+        throw new Error("AI 草稿应用账号规则后为空，请调整规则或重试。");
+      if (
+        update((current) => ({
+          ...current,
+          posts: [...posts, ...current.posts],
+        }))
+      )
+        setNotice(`AI 已生成 ${posts.length} 篇，请逐篇审核。`);
+      else setNotice("AI 已生成草稿，但保存失败，请重试。");
+    } catch (cause) {
+      setNotice(
+        cause instanceof Error ? cause.message : "AI 生成失败，请重试。",
+      );
+    } finally {
+      setGeneratingId(null);
+    }
+  }
   function saveWorker() {
     if (!editing?.name.trim()) return setNotice("请输入 Worker 名称。");
     const worker = editing;
@@ -709,7 +758,8 @@ export function WorkersPage() {
           Worker 根据你的主题生成一批可编辑草稿。每篇都由你决定是否保存或排期。
         </p>
         <p className="studio-muted">
-          当前使用本地模板生成草稿，尚未接入 AI 写作服务。
+          可选择 AI 生成或本地模板。AI 生成会消耗 Cloudflare Workers AI
+          用量；所有结果都需要人工审核，不会自动发布。
         </p>
       </section>
       <section className="studio-card">
@@ -733,6 +783,13 @@ export function WorkersPage() {
             <div className="studio-inline">
               <button
                 className="studio-primary"
+                disabled={Boolean(generatingId)}
+                onClick={() => void generateWithAi(worker)}
+              >
+                {generatingId === worker.id ? "AI 生成中…" : "AI 生成"}
+              </button>
+              <button
+                className="studio-secondary"
                 onClick={() => {
                   if (!worker.active)
                     return setNotice("请先启用这个 Worker。 ");
@@ -743,7 +800,7 @@ export function WorkersPage() {
                   setNotice("草稿已生成，请逐篇审核。");
                 }}
               >
-                Run
+                使用模板
               </button>
               <button
                 className="studio-link"
@@ -872,6 +929,7 @@ export function WorkersPage() {
               主题
               <input
                 value={editing.topic}
+                maxLength={200}
                 onChange={(e) =>
                   setEditing({ ...editing, topic: e.target.value })
                 }
@@ -915,6 +973,7 @@ export function WorkersPage() {
               额外写作要求
               <textarea
                 rows={3}
+                maxLength={600}
                 value={editing.instructions}
                 onChange={(e) =>
                   setEditing({ ...editing, instructions: e.target.value })

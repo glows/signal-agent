@@ -4,10 +4,53 @@ import { and, eq } from "drizzle-orm";
 import { z } from "zod";
 
 import { protectedProcedure, router } from "../lib/trpc.js";
+import {
+  parseWorkerDrafts,
+  workerDraftInput,
+  workerDraftPrompt,
+} from "../services/worker-drafts.js";
 
 const document = z.object({ version: z.literal(1) }).catchall(z.unknown());
 
 export const studioRouter = router({
+  generateWorker: protectedProcedure
+    .input(workerDraftInput)
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.env.AI)
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "AI 写作服务尚未配置。",
+        });
+      let response: unknown;
+      try {
+        response = await ctx.env.AI.run("@cf/meta/llama-3.1-8b-instruct-fp8", {
+          messages: [
+            {
+              role: "system",
+              content:
+                "你是中文社交媒体写作助手。遵守用户要求，输出有效 JSON。",
+            },
+            { role: "user", content: workerDraftPrompt(input) },
+          ],
+          max_tokens: 1200,
+          temperature: 0.7,
+        });
+      } catch {
+        throw new TRPCError({
+          code: "BAD_GATEWAY",
+          message: "AI 生成失败或额度不足，请稍后重试。",
+        });
+      }
+      try {
+        return { drafts: parseWorkerDrafts(response, input.count) };
+      } catch (error) {
+        throw new TRPCError({
+          code: "BAD_GATEWAY",
+          message:
+            error instanceof Error ? error.message : "AI 返回的草稿无效。",
+        });
+      }
+    }),
   read: protectedProcedure.query(async ({ ctx }) => {
     const [row] = await ctx.db
       .select({ data: studioState.data, revision: studioState.revision })

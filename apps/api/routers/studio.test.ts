@@ -1,6 +1,6 @@
 import { user } from "@repo/db";
 import { createTestDatabase } from "@repo/db/testing";
-import { afterAll, beforeEach, expect, it } from "vitest";
+import { afterAll, beforeEach, expect, it, vi } from "vitest";
 
 import type { TRPCContext } from "../lib/context";
 import { createCallerFactory } from "../lib/trpc";
@@ -61,4 +61,37 @@ it("rejects stale writes without losing the newer version", async () => {
     a.save({ expectedRevision: 1, data: { version: 1, about: "stale" } }),
   ).rejects.toMatchObject({ code: "CONFLICT" });
   expect((await a.read())?.data).toMatchObject({ about: "second" });
+});
+
+it("generates drafts only for signed-in users with an AI binding", async () => {
+  const ctx = await context("writer@test.com");
+  const input = {
+    topic: "AI 产品",
+    audience: "创始人",
+    about: "",
+    styleGuide: "",
+    instructions: "",
+    voice: "mine" as const,
+    count: 2,
+    noQuestions: false,
+    noNumberedLists: false,
+    examples: [],
+  };
+  await expect(caller(ctx).generateWorker(input)).rejects.toMatchObject({
+    code: "PRECONDITION_FAILED",
+  });
+  const run = vi
+    .fn()
+    .mockResolvedValue({ response: '{"drafts":["第一篇","第二篇"]}' });
+  const withAi = caller({
+    ...ctx,
+    env: { ...ctx.env, AI: { run } as unknown as Ai },
+  });
+  await expect(withAi.generateWorker(input)).resolves.toEqual({
+    drafts: ["第一篇", "第二篇"],
+  });
+  expect(run).toHaveBeenCalledOnce();
+  await expect(
+    caller({ ...ctx, user: null, session: null }).generateWorker(input),
+  ).rejects.toMatchObject({ code: "UNAUTHORIZED" });
 });

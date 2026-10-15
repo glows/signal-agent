@@ -52,6 +52,7 @@
     // Wrangler never resolves. Point the bindings at any Postgres instance with
     // CLOUDFLARE_HYPERDRIVE_LOCAL_CONNECTION_STRING_HYPERDRIVE_{CACHED,UNCACHED}.
     "dev": {
+      "ai": { "binding": "AI" },
       "triggers": { "crons": [] },
       "vars": {
         "ENVIRONMENT": "development",
