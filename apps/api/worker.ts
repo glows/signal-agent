@@ -19,6 +19,7 @@ import {
   requestIdGenerator,
 } from "./lib/middleware.js";
 import { sweepAcquisition } from "./services/acquisition.js";
+import { sweepScheduledWorkers } from "./services/worker-schedule.js";
 
 type CloudflareEnv = {
   HYPERDRIVE_CACHED: Hyperdrive;
@@ -66,6 +67,8 @@ export default {
     ctx: ExecutionContext,
   ) {
     const db = createDb(env.HYPERDRIVE_UNCACHED);
-    ctx.waitUntil(sweepAcquisition(db, createAuth(db, env), env));
+    if (env.RUN_ACQUISITION_SCHEDULE !== "false")
+      ctx.waitUntil(sweepAcquisition(db, createAuth(db, env), env));
+    ctx.waitUntil(sweepScheduledWorkers(db, env));
   },
 };

@@ -5,7 +5,7 @@
   "compatibility_date": "2026-08-08",
   "compatibility_flags": ["nodejs_compat"],
   "workers_dev": true,
-  "triggers": { "crons": [] },
+  "triggers": { "crons": ["*/5 * * * *"] },
   "upload_source_maps": true,
   "observability": { "enabled": true },
   "ai": { "binding": "AI" },
@@ -13,6 +13,7 @@
     "ENVIRONMENT": "staging",
     "APP_NAME": "Signal Agent",
     "APP_ORIGIN": "https://signal-agent-preview-web.ne0web64.workers.dev",
+    "RUN_ACQUISITION_SCHEDULE": "false",
     "RESEND_EMAIL_FROM": "login@flymind.org"
   },
   "hyperdrive": [

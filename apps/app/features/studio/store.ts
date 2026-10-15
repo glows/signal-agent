@@ -1,3 +1,4 @@
+import type { WorkerSchedule } from "@repo/core/worker-schedule";
 import { useEffect, useState } from "react";
 
 import { trpcClient } from "#lib/trpc";
@@ -22,6 +23,7 @@ export interface StudioWorker {
   count: number;
   active: boolean;
   voiceExamples?: string[];
+  schedule?: WorkerSchedule;
 }
 export interface StudioContact {
   id: string;
@@ -168,13 +170,14 @@ type SyncSession = {
   initial?: Promise<void>;
   queue: Promise<void>;
   generation: number;
+  syncFailed: boolean;
 };
 const syncSessions = new Map<string, SyncSession>();
 
 function sessionFor(userId: string) {
   let session = syncSessions.get(userId);
   if (!session) {
-    session = { queue: Promise.resolve(), generation: 0 };
+    session = { queue: Promise.resolve(), generation: 0, syncFailed: false };
     syncSessions.set(userId, session);
   }
   return session;
@@ -230,10 +233,42 @@ export function useStudio(userId: string) {
     window.addEventListener("studio-change", refresh);
     if (userId) {
       const session = sessionFor(userId);
+      async function refreshRemote() {
+        const generation = session.generation;
+        try {
+          await initialize(userId, session);
+          await session.queue;
+          const remote = await trpcClient.studio.read.query();
+          if (
+            remote &&
+            !session.syncFailed &&
+            session.generation === generation
+          )
+            write(userId, normalize(remote.data));
+        } catch {
+          session.initial = undefined;
+        }
+      }
       void initialize(userId, session).catch(() => {
         session.initial = undefined;
+        session.syncFailed = true;
         setError("云端同步暂不可用，当前修改仍保存在此浏览器。");
       });
+      function onVisible() {
+        if (document.visibilityState === "visible") void refreshRemote();
+      }
+      void refreshRemote();
+      window.addEventListener("focus", onVisible);
+      const interval = window.setInterval(onVisible, 60_000);
+      document.addEventListener("visibilitychange", onVisible);
+      return () => {
+        window.cancelAnimationFrame(frame);
+        window.removeEventListener("storage", refresh);
+        window.removeEventListener("studio-change", refresh);
+        window.removeEventListener("focus", onVisible);
+        window.clearInterval(interval);
+        document.removeEventListener("visibilitychange", onVisible);
+      };
     }
     return () => {
       window.cancelAnimationFrame(frame);
@@ -265,6 +300,7 @@ export function useStudio(userId: string) {
                 expectedRevision: remote?.revision ?? 0,
                 data: { ...merged },
               });
+              session.syncFailed = false;
               if (session.generation === generation) write(userId, merged);
               return;
             } catch (cause) {
@@ -279,6 +315,7 @@ export function useStudio(userId: string) {
         })
         .catch(() => {
           session.initial = undefined;
+          session.syncFailed = true;
           setError("云端同步失败，当前修改仍保存在此浏览器。请稍后重试。");
         });
       return true;

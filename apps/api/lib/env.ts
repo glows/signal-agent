@@ -22,6 +22,7 @@ export const envSchema = z.object({
   X_ALLOWED_USER_IDS: z.string().optional(),
   X_MAX_POSTS_PER_RUN: z.coerce.number().int().min(30).max(100).optional(),
   AI: z.custom<Ai>().optional(),
+  RUN_ACQUISITION_SCHEDULE: z.enum(["true", "false"]).optional(),
   // Stripe billing (optional – app works without these, billing features disabled)
   STRIPE_SECRET_KEY: z.string().startsWith("sk_").optional(),
   STRIPE_WEBHOOK_SECRET: z.string().startsWith("whsec_").optional(),

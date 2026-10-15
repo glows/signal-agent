@@ -1,3 +1,4 @@
+import { nextWorkerRun } from "@repo/core/worker-schedule";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -707,7 +708,18 @@ export function WorkersPage() {
   }
   function saveWorker() {
     if (!editing?.name.trim()) return setNotice("请输入 Worker 名称。");
-    const worker = editing;
+    const nextRunAt = editing.schedule
+      ? nextWorkerRun(editing.schedule, data.timezone)
+      : null;
+    if (editing.schedule && !nextRunAt)
+      return setNotice("无法计算下次运行时间，请检查时区和计划时间。");
+    const worker: StudioWorker = {
+      ...editing,
+      schedule:
+        editing.schedule && nextRunAt
+          ? { ...editing.schedule, nextRunAt }
+          : undefined,
+    };
     if (
       !update((current) => ({
         ...current,
@@ -831,6 +843,18 @@ export function WorkersPage() {
                     : "Hybrid"}{" "}
                 · {worker.topic || "你的主题"} · 每次 {worker.count} 篇
               </p>
+              {worker.schedule && (
+                <p>
+                  下次生成：
+                  {formatZonedDate(
+                    worker.schedule.nextRunAt,
+                    data.timezone,
+                  )} ·{" "}
+                  {worker.active ? "已启用" : "已暂停"}
+                  {worker.schedule.lastRunStatus &&
+                    ` · 上次运行：${worker.schedule.lastRunStatus === "success" ? "已生成草稿" : worker.schedule.lastRunStatus === "failed" ? "失败，请手动重试" : "生成中"}`}
+                </p>
+              )}
             </div>
             <div className="studio-inline">
               <button
@@ -1062,6 +1086,85 @@ export function WorkersPage() {
                 }
               />
             </label>
+            <label>
+              运行计划
+              <select
+                value={editing.schedule?.frequency ?? "off"}
+                onChange={(e) =>
+                  setEditing({
+                    ...editing,
+                    schedule:
+                      e.target.value === "off"
+                        ? undefined
+                        : {
+                            frequency: e.target.value as "daily" | "weekly",
+                            time: editing.schedule?.time ?? "09:00",
+                            weekday: editing.schedule?.weekday ?? 1,
+                            nextRunAt: "",
+                          },
+                  })
+                }
+              >
+                <option value="off">仅手动运行</option>
+                <option value="daily">每天</option>
+                <option value="weekly">每周</option>
+              </select>
+            </label>
+            {editing.schedule && (
+              <>
+                {editing.schedule.frequency === "weekly" && (
+                  <label>
+                    星期
+                    <select
+                      value={editing.schedule.weekday}
+                      onChange={(e) =>
+                        setEditing({
+                          ...editing,
+                          schedule: {
+                            ...editing.schedule!,
+                            weekday: Number(e.target.value),
+                          },
+                        })
+                      }
+                    >
+                      {[
+                        [1, "周一"],
+                        [2, "周二"],
+                        [3, "周三"],
+                        [4, "周四"],
+                        [5, "周五"],
+                        [6, "周六"],
+                        [0, "周日"],
+                      ].map(([day, label]) => (
+                        <option key={day} value={day}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                )}
+                <label>
+                  生成时间（{data.timezone}）
+                  <input
+                    type="time"
+                    value={editing.schedule.time}
+                    onChange={(e) =>
+                      setEditing({
+                        ...editing,
+                        schedule: {
+                          ...editing.schedule!,
+                          time: e.target.value,
+                        },
+                      })
+                    }
+                  />
+                </label>
+                <p>
+                  到点自动生成待审核草稿；不会自动发布。每次 AI
+                  生成可能消耗模型额度。
+                </p>
+              </>
+            )}
             <label>
               额外写作要求
               <textarea
