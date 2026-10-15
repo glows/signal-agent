@@ -534,3 +534,33 @@
   max-width: 340px;
   white-space: pre-wrap;
 }
+.studio-queue-slots {
+  display: grid;
+  gap: 12px;
+}
+.studio-queue-slot {
+  padding: 12px 16px;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  background: #fff;
+}
+.studio-queue-slot > strong {
+  display: block;
+  margin-bottom: 6px;
+}
+.studio-queue-slot > p {
+  margin: 4px 0;
+  white-space: pre-wrap;
+}
+.studio-slot-form {
+  display: grid;
+  gap: 8px;
+  margin-top: 12px;
+}
+.studio-slot-form .studio-inline {
+  justify-content: flex-start;
+}
+.dark .studio-queue-slot {
+  background: #1f2024;
+  border-color: #3f4147;
+}

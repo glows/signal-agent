@@ -61,3 +61,17 @@ export function formatZonedDate(iso: string, timeZone: string) {
     timeZone,
   }).format(new Date(iso));
 }
+
+export function upcomingQueueSlots(now: Date, timeZone: string, count = 5) {
+  const localToday = formatZonedInput(now.toISOString(), timeZone).slice(0, 10);
+  const [year, month, day] = localToday.split("-").map(Number);
+  const slots: string[] = [];
+  for (let offset = 0; slots.length < count && offset < count + 8; offset++) {
+    const date = new Date(Date.UTC(year!, month! - 1, day! + offset))
+      .toISOString()
+      .slice(0, 10);
+    const iso = parseZonedInput(`${date}T18:00`, timeZone);
+    if (iso && Date.parse(iso) > now.getTime()) slots.push(iso);
+  }
+  return slots;
+}

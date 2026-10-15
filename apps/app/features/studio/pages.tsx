@@ -11,7 +11,12 @@ import {
   selectAnalyticsPosts,
   type AnalyticsTab,
 } from "./analytics";
-import { formatZonedDate, formatZonedInput, parseZonedInput } from "./schedule";
+import {
+  formatZonedDate,
+  formatZonedInput,
+  parseZonedInput,
+  upcomingQueueSlots,
+} from "./schedule";
 import {
   newId,
   useStudio,
@@ -197,11 +202,56 @@ export function QueuePage() {
   const [when, setWhen] = useState("");
   const [publishing, setPublishing] = useState<string | null>(null);
   const [notice, setNotice] = useState("");
+  const [activeSlot, setActiveSlot] = useState<string | null>(null);
+  const [slotText, setSlotText] = useState("");
+  const [slotDraftId, setSlotDraftId] = useState("");
+  const [slotAsOf] = useState(() => new Date());
   const scheduled = data.posts
     .filter((post) => post.status === "scheduled")
     .sort((a, b) => (a.scheduledAt ?? "").localeCompare(b.scheduledAt ?? ""));
   const drafts = data.posts.filter((post) => post.status === "draft");
   const published = data.posts.filter((post) => post.status === "published");
+  const slots = upcomingQueueSlots(slotAsOf, data.timezone);
+  function fillSlot(slot: string, now: number) {
+    if (Date.parse(slot) <= now)
+      return setNotice("这个时间槽已过去，请选择未来时间。");
+    if (scheduled.some((post) => post.scheduledAt === slot))
+      return setNotice("这个时间槽已排期，请选择其他时间。");
+    if (slotDraftId) {
+      const draft = drafts.find((post) => post.id === slotDraftId);
+      if (!draft) return setNotice("所选草稿已不存在。");
+      if (
+        !update((current) => ({
+          ...current,
+          posts: current.posts.map((post) =>
+            post.id === draft.id
+              ? { ...post, status: "scheduled", scheduledAt: slot }
+              : post,
+          ),
+        }))
+      )
+        return setNotice("排期保存失败，请重试。");
+    } else {
+      const text = slotText.trim();
+      if (!text || text.length > 280)
+        return setNotice("请输入 1 至 280 字的帖子内容。");
+      const post: StudioPost = {
+        id: newId(),
+        text,
+        status: "scheduled",
+        createdAt: new Date().toISOString(),
+        scheduledAt: slot,
+      };
+      if (
+        !update((current) => ({ ...current, posts: [post, ...current.posts] }))
+      )
+        return setNotice("排期保存失败，请重试。");
+    }
+    setActiveSlot(null);
+    setSlotText("");
+    setSlotDraftId("");
+    setNotice("已加入队列；到时请在下方确认发布。");
+  }
   function change(id: string, patch: Partial<StudioPost>) {
     update((current) => ({
       ...current,
@@ -261,6 +311,79 @@ export function QueuePage() {
         </Link>
       }
     >
+      <section className="studio-card">
+        <h2>未来 5 个发布时间槽</h2>
+        <p className="studio-muted">
+          以 {data.timezone} 每天 18:00 展示。选择空槽，可写新帖或放入已有草稿。
+        </p>
+        <div className="studio-queue-slots">
+          {slots.map((slot) => {
+            const existing = scheduled.find(
+              (post) => post.scheduledAt === slot,
+            );
+            return (
+              <div className="studio-queue-slot" key={slot}>
+                <strong>{formatZonedDate(slot, data.timezone)}</strong>
+                {existing ? (
+                  <p>{existing.text}</p>
+                ) : (
+                  <button
+                    className="studio-link"
+                    onClick={() => {
+                      setActiveSlot(slot);
+                      setSlotDraftId("");
+                      setSlotText("");
+                    }}
+                  >
+                    + 填入时间槽
+                  </button>
+                )}
+                {activeSlot === slot && !existing && (
+                  <div className="studio-slot-form">
+                    <label htmlFor="slot-draft">使用已有草稿</label>
+                    <select
+                      id="slot-draft"
+                      value={slotDraftId}
+                      onChange={(event) => setSlotDraftId(event.target.value)}
+                    >
+                      <option value="">写一篇新帖</option>
+                      {drafts.map((draft) => (
+                        <option key={draft.id} value={draft.id}>
+                          {draft.text.slice(0, 60)}
+                        </option>
+                      ))}
+                    </select>
+                    {!slotDraftId && (
+                      <textarea
+                        aria-label="新帖内容"
+                        value={slotText}
+                        maxLength={280}
+                        rows={3}
+                        onChange={(event) => setSlotText(event.target.value)}
+                        placeholder="分享一个想法…"
+                      />
+                    )}
+                    <div className="studio-inline">
+                      <button
+                        className="studio-primary"
+                        onClick={() => fillSlot(slot, Date.now())}
+                      >
+                        加入队列
+                      </button>
+                      <button
+                        className="studio-link"
+                        onClick={() => setActiveSlot(null)}
+                      >
+                        取消
+                      </button>
+                    </div>
+                  </div>
+                )}
+              </div>
+            );
+          })}
+        </div>
+      </section>
       <section className="studio-card">
         <h2>已排期 · {scheduled.length}</h2>
         <p className="studio-muted">
