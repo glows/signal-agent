@@ -21,6 +21,7 @@ export interface StudioWorker {
   instructions: string;
   count: number;
   active: boolean;
+  voiceExamples?: string[];
 }
 export interface StudioContact {
   id: string;

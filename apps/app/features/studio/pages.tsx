@@ -608,8 +608,44 @@ export function WorkersPage() {
   const [editing, setEditing] = useState<StudioWorker | null>(null);
   const [notice, setNotice] = useState("");
   const [generatingId, setGeneratingId] = useState<string | null>(null);
+  const [voiceCandidates, setVoiceCandidates] = useState<string[]>([]);
+  const [voiceLoading, setVoiceLoading] = useState(false);
+  const [voiceNotice, setVoiceNotice] = useState("");
   const [reviewWhen, setReviewWhen] = useState<Record<string, string>>({});
   const review = data.posts.filter((post) => post.status === "review");
+  function openWorkerEditor(worker: StudioWorker) {
+    setEditing(worker);
+    setVoiceCandidates(worker.voiceExamples ?? []);
+    setVoiceNotice("");
+  }
+  async function loadVoiceSamples() {
+    setVoiceLoading(true);
+    setVoiceNotice("");
+    try {
+      const posts = await trpcClient.signals.recentOwnPosts.mutate();
+      const candidates = [...new Set(posts.map((post) => post.trim()))]
+        .filter((post) => post.length > 0 && post.length <= 280)
+        .slice(0, 30);
+      setVoiceCandidates((current) => [
+        ...new Set([
+          ...(editing?.voiceExamples ?? []),
+          ...candidates,
+          ...current,
+        ]),
+      ]);
+      setVoiceNotice(
+        candidates.length
+          ? `读取到 ${candidates.length} 条近期原创帖子，请选择最多 5 条作为写作样本。`
+          : "没有找到长度不超过 280 字的近期原创帖子。",
+      );
+    } catch (cause) {
+      setVoiceNotice(
+        cause instanceof Error ? cause.message : "读取 X 帖子失败。",
+      );
+    } finally {
+      setVoiceLoading(false);
+    }
+  }
   async function generateWithAi(worker: StudioWorker) {
     if (!worker.active) return setNotice("请先启用这个 Worker。");
     if (generatingId) return;
@@ -631,10 +667,16 @@ export function WorkersPage() {
         count: worker.count,
         noQuestions: data.writingRules.noQuestions,
         noNumberedLists: data.writingRules.noNumberedLists,
-        examples: data.posts
-          .filter((post) => post.status === "published")
-          .slice(0, 5)
-          .map((post) => post.text),
+        examples:
+          worker.voice === "creator"
+            ? []
+            : worker.voiceExamples?.length
+              ? worker.voiceExamples
+              : data.posts
+                  .filter((post) => post.status === "published")
+                  .map((post) => post.text.trim())
+                  .filter((text) => text.length > 0 && text.length <= 280)
+                  .slice(0, 5),
       });
       const createdAt = new Date().toISOString();
       const posts: StudioPost[] = result.drafts.map((text) => ({
@@ -666,12 +708,17 @@ export function WorkersPage() {
   function saveWorker() {
     if (!editing?.name.trim()) return setNotice("请输入 Worker 名称。");
     const worker = editing;
-    update((current) => ({
-      ...current,
-      workers: current.workers.some((item) => item.id === worker.id)
-        ? current.workers.map((item) => (item.id === worker.id ? worker : item))
-        : [...current.workers, worker],
-    }));
+    if (
+      !update((current) => ({
+        ...current,
+        workers: current.workers.some((item) => item.id === worker.id)
+          ? current.workers.map((item) =>
+              item.id === worker.id ? worker : item,
+            )
+          : [...current.workers, worker],
+      }))
+    )
+      return setNotice("保存 Worker 失败，请重试。");
     setEditing(null);
     setNotice("");
   }
@@ -725,7 +772,7 @@ export function WorkersPage() {
           <button
             className="studio-secondary"
             onClick={() =>
-              setEditing({
+              openWorkerEditor({
                 id: newId(),
                 name: "Daily posts",
                 topic: data.products[0] ?? "",
@@ -741,7 +788,7 @@ export function WorkersPage() {
           <button
             className="studio-primary"
             onClick={() =>
-              setEditing({
+              openWorkerEditor({
                 id: newId(),
                 name: "Daily posts",
                 topic: "",
@@ -824,7 +871,7 @@ export function WorkersPage() {
               </button>
               <button
                 className="studio-link"
-                onClick={() => setEditing(worker)}
+                onClick={() => openWorkerEditor(worker)}
               >
                 编辑
               </button>
@@ -956,6 +1003,47 @@ export function WorkersPage() {
                 <option value="hybrid">Hybrid</option>
               </select>
             </label>
+            {editing.voice !== "creator" && (
+              <div className="studio-field">
+                <strong>我的声音 · 写作样本</strong>
+                <p>
+                  从已连接的 X 读取近期原创帖子，最多选择 5
+                  条。样本与风格指南冲突时以样本为准；账号规则始终优先。
+                </p>
+                <button
+                  className="studio-secondary"
+                  disabled={voiceLoading}
+                  onClick={() => void loadVoiceSamples()}
+                >
+                  {voiceLoading ? "读取中…" : "从 X 读取近期原创帖子"}
+                </button>
+                <p>
+                  读取会消耗 X API 额度。已选择{" "}
+                  {editing.voiceExamples?.length ?? 0}/5 条。
+                </p>
+                {voiceNotice && <output>{voiceNotice}</output>}
+                {voiceCandidates.map((post) => (
+                  <label key={post} className="studio-voice-example">
+                    <input
+                      type="checkbox"
+                      checked={editing.voiceExamples?.includes(post) ?? false}
+                      onChange={() => {
+                        const selected = editing.voiceExamples ?? [];
+                        setEditing({
+                          ...editing,
+                          voiceExamples: selected.includes(post)
+                            ? selected.filter((item) => item !== post)
+                            : selected.length < 5
+                              ? [...selected, post]
+                              : selected,
+                        });
+                      }}
+                    />
+                    <span>{post}</span>
+                  </label>
+                ))}
+              </div>
+            )}
             <label>
               每次篇数
               <input

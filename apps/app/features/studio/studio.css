@@ -322,6 +322,32 @@
   display: block;
   margin-top: 7px;
 }
+.studio-field {
+  margin: 18px 0;
+}
+.studio-field p {
+  color: #6b7280;
+  font-size: 13px;
+  line-height: 1.5;
+}
+.studio-modal label.studio-voice-example {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px;
+  margin: 8px 0;
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  font-weight: 400;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.studio-modal label.studio-voice-example input {
+  display: inline-block;
+  width: auto;
+  flex: none;
+  margin: 3px 0 0;
+}
 .studio-tabs {
   display: flex;
   gap: 25px;

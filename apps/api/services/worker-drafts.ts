@@ -17,9 +17,10 @@ export type WorkerDraftInput = z.infer<typeof workerDraftInput>;
 
 export function workerDraftPrompt(input: WorkerDraftInput) {
   const voice = {
-    mine: "模仿提供的个人写作样本与风格指南；没有样本时保持自然个人表达。",
+    mine: "模仿提供的个人写作样本与风格指南；两者冲突时以写作样本为准，硬性规则始终优先。没有样本时保持自然个人表达。",
     creator: "使用清晰、有吸引力的创作者写作结构，但不要假冒某位具体创作者。",
-    hybrid: "保持个人表达，同时借鉴清晰、有吸引力的创作者结构。",
+    hybrid:
+      "保持个人表达，同时借鉴清晰、有吸引力的创作者结构；个人写作样本与风格指南冲突时以样本为准，硬性规则始终优先。",
   }[input.voice];
   return [
     `请为 X 写 ${input.count} 条彼此不同的中文帖子，每条不超过 280 字。`,
