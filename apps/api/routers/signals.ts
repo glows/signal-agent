@@ -16,6 +16,55 @@ export const signalsRouter = router({
   disconnect: protectedProcedure.mutation(({ ctx }) =>
     disconnectX(ctx, ctx.user.id),
   ),
+  recentOwnPosts: protectedProcedure.mutation(async ({ ctx }) => {
+    const connection = await xOAuthConnection(ctx, ctx.user.id);
+    if (!connection.xAccountId)
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "请先连接 X。",
+      });
+    const token = await userXToken(ctx, ctx.user.id);
+    let response: Response;
+    try {
+      response = await fetch(
+        `https://api.x.com/2/users/${connection.xAccountId}/tweets?max_results=30&exclude=retweets,replies`,
+        {
+          headers: { Authorization: `Bearer ${token}` },
+          signal: AbortSignal.timeout(20_000),
+        },
+      );
+    } catch {
+      throw new TRPCError({
+        code: "BAD_GATEWAY",
+        message: "读取近期帖子超时，请稍后重试。",
+      });
+    }
+    if (response.status === 402)
+      throw new TRPCError({
+        code: "PRECONDITION_FAILED",
+        message: "X API 余额不足，请检查 Developer Console。",
+      });
+    if (response.status === 429)
+      throw new TRPCError({
+        code: "TOO_MANY_REQUESTS",
+        message: "X API 已限流，请稍后重试。",
+      });
+    if (!response.ok)
+      throw new TRPCError({
+        code: "BAD_GATEWAY",
+        message: `读取近期帖子失败（HTTP ${response.status}）。`,
+      });
+    const payload: unknown = await response.json();
+    const parsed = z
+      .object({ data: z.array(z.object({ text: z.string() })).optional() })
+      .safeParse(payload);
+    if (!parsed.success)
+      throw new TRPCError({
+        code: "BAD_GATEWAY",
+        message: "X 返回的帖子数据不完整。",
+      });
+    return parsed.data.data?.map((post) => post.text) ?? [];
+  }),
   publish: protectedProcedure
     .input(z.object({ text: z.string().trim().min(1).max(280) }))
     .mutation(async ({ ctx, input }) => {

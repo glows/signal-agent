@@ -117,6 +117,9 @@ describe("per-user OAuth connection", () => {
           signals: [{ type: "keyword", value: "AI" }],
         }),
       ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
+      await expect(
+        createCaller(context(true)).recentOwnPosts(),
+      ).rejects.toMatchObject({ code: "PRECONDITION_FAILED" });
       expect(spy).not.toHaveBeenCalled();
     } finally {
       spy.mockRestore();

@@ -14,6 +14,7 @@ import {
   type StudioPost,
   type StudioWorker,
 } from "./store";
+import { styleGuideFromPosts } from "./style-guide";
 import { applyWritingRules } from "./writing-rules";
 
 import "./studio.css";
@@ -1086,6 +1087,29 @@ const interestGroups: Record<string, string[]> = {
 export function ContextPage() {
   const { data, update, error } = useWorkspace();
   const [product, setProduct] = useState("");
+  const [styleSuggestion, setStyleSuggestion] = useState<string | null>(null);
+  const [styleLoading, setStyleLoading] = useState(false);
+  const [styleNotice, setStyleNotice] = useState("");
+  async function regenerateStyle() {
+    setStyleLoading(true);
+    setStyleNotice("");
+    setStyleSuggestion(null);
+    try {
+      const posts = await trpcClient.signals.recentOwnPosts.mutate();
+      const suggestion = styleGuideFromPosts(posts);
+      if (!suggestion) {
+        setStyleNotice("近期原创帖子不足 3 条，无法生成可靠的风格观察。");
+        return;
+      }
+      setStyleSuggestion(suggestion);
+    } catch (cause) {
+      setStyleNotice(
+        cause instanceof Error ? cause.message : "读取近期帖子失败。",
+      );
+    } finally {
+      setStyleLoading(false);
+    }
+  }
   return (
     <Page title="Context" subtitle="定义 AI 写什么、写给谁，以及你的表达方式。">
       <section className="studio-card">
@@ -1142,8 +1166,51 @@ export function ContextPage() {
         <small>{data.about.length}/500 characters</small>
       </section>
       <section className="studio-card">
-        <h2>Style Guide</h2>
+        <div className="studio-inline">
+          <h2>Style Guide</h2>
+          <button
+            className="studio-secondary"
+            disabled={styleLoading}
+            onClick={() => void regenerateStyle()}
+          >
+            {styleLoading ? "读取中…" : "根据近期帖子重新生成"}
+          </button>
+        </div>
         <p className="studio-muted">你的修改优先于自动生成内容。</p>
+        <p className="studio-muted">
+          手动读取最多 30 条 X 原创帖子，会消耗 X API 额度；生成建议前需连接 X。
+        </p>
+        {styleSuggestion && (
+          <div className="studio-post-preview">
+            <strong>建议预览</strong>
+            <p>{styleSuggestion}</p>
+            <div className="studio-inline">
+              <button
+                className="studio-primary"
+                onClick={() => {
+                  if (
+                    update((current) => ({
+                      ...current,
+                      vocabulary: styleSuggestion,
+                    }))
+                  ) {
+                    setStyleSuggestion(null);
+                    setStyleNotice("风格建议已应用，你仍可继续编辑。");
+                  }
+                }}
+              >
+                应用到 Style & Vocabulary
+              </button>
+              <button
+                className="studio-secondary"
+                onClick={() => setStyleSuggestion(null)}
+              >
+                放弃
+              </button>
+            </div>
+          </div>
+        )}
+        <Alert text={styleNotice} />
         <label>
           Audience
           <textarea
