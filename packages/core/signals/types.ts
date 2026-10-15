@@ -28,6 +28,12 @@ export interface Agent extends AgentInput {
   createdAt: string;
   updatedAt: string;
   lastCheckedAt: string | null;
+  lastRun?: {
+    sources: number;
+    postsScanned: number;
+    candidatesScored: number;
+    leadsAdded: number;
+  };
 }
 
 export interface Person {

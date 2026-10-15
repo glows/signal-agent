@@ -32,7 +32,7 @@ export function AgentCard({
           <Radar size={19} />
         </span>
         <span className={`status-pill ${agent.status}`}>
-          {agent.status === "active" ? "运行中" : "已暂停"}
+          {agent.status === "active" ? "已启用" : "已暂停"}
         </span>
       </div>
       <button className="agent-card-title" onClick={onSelect}>
@@ -55,6 +55,22 @@ export function AgentCard({
             : "尚未运行"}
         </span>
       </div>
+      {agent.lastRun && (
+        <div className="agent-run-summary" aria-label="上次运行结果">
+          <span>
+            <strong>{agent.lastRun.sources}</strong> 来源
+          </span>
+          <span>
+            <strong>{agent.lastRun.postsScanned}</strong> 扫描
+          </span>
+          <span>
+            <strong>{agent.lastRun.candidatesScored}</strong> 已评分
+          </span>
+          <span>
+            <strong>{agent.lastRun.leadsAdded}</strong> 新增
+          </span>
+        </div>
+      )}
       <div className="agent-card-actions">
         <button
           className="run-button"

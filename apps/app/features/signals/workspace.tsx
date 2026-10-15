@@ -315,7 +315,20 @@ export function SignalWorkspace({
         leads: result.leads,
         agents: current.agents.map((item) =>
           item.id === agent.id
-            ? { ...item, lastCheckedAt: result.checkedAt }
+            ? {
+                ...item,
+                lastCheckedAt: result.checkedAt,
+                ...(live
+                  ? {
+                      lastRun: {
+                        sources: currentAgent.signals.length,
+                        postsScanned: live.postsScanned,
+                        candidatesScored: live.candidatesScored,
+                        leadsAdded: result.added,
+                      },
+                    }
+                  : {}),
+              }
             : item,
         ),
       };

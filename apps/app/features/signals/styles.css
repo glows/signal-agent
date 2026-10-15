@@ -645,6 +645,25 @@
 .signal-workspace .agent-meta strong {
   color: #263d2d;
 }
+.signal-workspace .agent-run-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+  padding: 0 0 12px;
+  color: #71846b;
+  text-align: center;
+  font-size: 11px;
+}
+.signal-workspace .agent-run-summary span {
+  border: 1px solid #e4ebdc;
+  border-radius: 6px;
+  padding: 5px 1px;
+}
+.signal-workspace .agent-run-summary strong {
+  display: block;
+  color: #263d2d;
+  font-size: 14px;
+}
 .signal-workspace .agent-card-actions {
   display: flex;
   align-items: center;

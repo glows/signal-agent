@@ -128,6 +128,10 @@ describe("real data workflow", () => {
     const user = await createLiveAgent();
     await user.click(screen.getByRole("button", { name: "运行一次" }));
     await screen.findByText("读取 1 条 X 帖子，新增 1 条线索");
+    const summary = screen.getAllByLabelText("上次运行结果")[0]!;
+    expect(within(summary).getByText("扫描")).toBeInTheDocument();
+    expect(within(summary).getByText("已评分")).toBeInTheDocument();
+    expect(within(summary).getByText("新增")).toBeInTheDocument();
     expect(calls.discover).toHaveBeenCalledWith(
       expect.objectContaining({
         name: "Real buyers",
