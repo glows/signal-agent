@@ -55,6 +55,7 @@ export interface StudioData {
   about: string;
   audience: string;
   vocabulary: string;
+  writingRules: { noQuestions: boolean; noNumberedLists: boolean };
   interests: string[];
   products: string[];
   bookmarkedPostIds: string[];
@@ -77,6 +78,7 @@ const empty: StudioData = {
   about: "",
   audience: "",
   vocabulary: "",
+  writingRules: { noQuestions: false, noNumberedLists: false },
   interests: [],
   products: [],
   bookmarkedPostIds: [],
@@ -109,6 +111,10 @@ function normalize(parsed: unknown): StudioData {
     workers: Array.isArray(value.workers) ? value.workers : [],
     contacts: Array.isArray(value.contacts) ? value.contacts : [],
     messages: Array.isArray(value.messages) ? value.messages : [],
+    writingRules: {
+      noQuestions: value.writingRules?.noQuestions === true,
+      noNumberedLists: value.writingRules?.noNumberedLists === true,
+    },
     followerHistory: Array.isArray(value.followerHistory)
       ? value.followerHistory
       : [],
@@ -148,6 +154,8 @@ function hasContent(data: StudioData) {
     data.about.length > 0 ||
     data.audience.length > 0 ||
     data.vocabulary.length > 0 ||
+    data.writingRules.noQuestions ||
+    data.writingRules.noNumberedLists ||
     data.interests.length > 0 ||
     data.products.length > 0 ||
     data.bookmarkedPostIds.length > 0 ||

@@ -14,6 +14,7 @@ import {
   type StudioPost,
   type StudioWorker,
 } from "./store";
+import { applyWritingRules } from "./writing-rules";
 
 import "./studio.css";
 
@@ -455,12 +456,17 @@ function makeDrafts(worker: StudioWorker, context: StudioData): StudioPost[] {
     `声音模式：${worker.voice === "mine" ? "个人观点模板" : worker.voice === "creator" ? "创作者结构模板" : "混合模板"}`,
     context.vocabulary ? `风格指南：${context.vocabulary}` : "",
     worker.instructions ? `额外要求：${worker.instructions}` : "",
+    context.writingRules.noQuestions ? "账号规则：文末不提问" : "",
+    context.writingRules.noNumberedLists ? "账号规则：不使用编号列表" : "",
   ]
     .filter(Boolean)
     .join("\n");
   return Array.from({ length: worker.count }, (_, i) => ({
     id: newId(),
-    text: patterns[i % patterns.length],
+    text: applyWritingRules(
+      patterns[i % patterns.length],
+      context.writingRules,
+    ),
     status: "review" as const,
     createdAt: new Date().toISOString(),
     workerId: worker.id,
@@ -1082,6 +1088,45 @@ export function ContextPage() {
   const [product, setProduct] = useState("");
   return (
     <Page title="Context" subtitle="定义 AI 写什么、写给谁，以及你的表达方式。">
+      <section className="studio-card">
+        <h2>Account Rules</h2>
+        <p className="studio-muted">
+          这些明确规则会应用于 Worker 生成的模板草稿，优先于 Worker
+          的额外要求。已保存的草稿不会被改写。
+        </p>
+        <label>
+          <input
+            type="checkbox"
+            checked={data.writingRules.noQuestions}
+            onChange={(event) =>
+              update((current) => ({
+                ...current,
+                writingRules: {
+                  ...current.writingRules,
+                  noQuestions: event.target.checked,
+                },
+              }))
+            }
+          />
+          不写问句
+        </label>
+        <label>
+          <input
+            type="checkbox"
+            checked={data.writingRules.noNumberedLists}
+            onChange={(event) =>
+              update((current) => ({
+                ...current,
+                writingRules: {
+                  ...current.writingRules,
+                  noNumberedLists: event.target.checked,
+                },
+              }))
+            }
+          />
+          不使用编号列表
+        </label>
+      </section>
       <section className="studio-card">
         <h2>About You</h2>
         <p className="studio-muted">为写作提供主题背景，不决定写作风格。</p>
