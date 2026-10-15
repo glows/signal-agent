@@ -12,7 +12,7 @@
     "ENVIRONMENT": "staging",
     "APP_NAME": "Signal Agent",
     "APP_ORIGIN": "https://signal-agent-preview-web.ne0web64.workers.dev",
-    "RESEND_EMAIL_FROM": "onboarding@resend.dev"
+    "RESEND_EMAIL_FROM": "login@flymind.org"
   },
   "hyperdrive": [
     {
