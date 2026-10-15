@@ -2,6 +2,7 @@ import { TRPCError } from "@trpc/server";
 import { z } from "zod";
 
 import { protectedProcedure, router } from "../lib/trpc.js";
+import { inspirationSearchUrl } from "../services/inspiration-search.js";
 import { discoverXLeads, XDataError } from "../services/x-data.js";
 import {
   disconnectX,
@@ -227,23 +228,18 @@ export const signalsRouter = router({
       z.object({
         query: z.string().trim().min(1).max(256),
         mediaOnly: z.boolean().default(false),
+        period: z.enum(["day", "week"]).default("week"),
+        account: z
+          .string()
+          .trim()
+          .regex(/^@?[A-Za-z0-9_]{1,15}$/)
+          .transform((value) => value.replace(/^@/, ""))
+          .optional(),
       }),
     )
     .mutation(async ({ ctx, input }) => {
       const token = await userXToken(ctx, ctx.user.id);
-      const url = new URL("https://api.x.com/2/tweets/search/recent");
-      url.searchParams.set(
-        "query",
-        input.mediaOnly ? `${input.query} has:media` : input.query,
-      );
-      url.searchParams.set("max_results", "30");
-      url.searchParams.set("expansions", "author_id,attachments.media_keys");
-      url.searchParams.set(
-        "tweet.fields",
-        "created_at,public_metrics,attachments",
-      );
-      url.searchParams.set("user.fields", "name,username");
-      url.searchParams.set("media.fields", "type,url,preview_image_url");
+      const url = inspirationSearchUrl({ ...input, now: new Date() });
       let response: Response;
       try {
         response = await fetch(url, {

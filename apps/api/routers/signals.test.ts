@@ -148,4 +148,20 @@ describe("per-user OAuth connection", () => {
       spy.mockRestore();
     }
   });
+  it("rejects malformed Inspiration account filters before contacting X", async () => {
+    const spy = vi.spyOn(globalThis, "fetch");
+    try {
+      await expect(
+        createCaller(context(true)).searchPosts({
+          query: "AI",
+          mediaOnly: false,
+          period: "day",
+          account: "bad handle OR from:other",
+        }),
+      ).rejects.toMatchObject({ code: "BAD_REQUEST" });
+      expect(spy).not.toHaveBeenCalled();
+    } finally {
+      spy.mockRestore();
+    }
+  });
 });

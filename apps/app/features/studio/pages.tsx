@@ -822,40 +822,33 @@ export function InspirationPage() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"posts" | "media" | "saved">("posts");
-  const [period, setPeriod] = useState<"all" | "day" | "week">("week");
+  const [period, setPeriod] = useState<"day" | "week">("week");
   const [account, setAccount] = useState("");
   const [bookmarkedOnly, setBookmarkedOnly] = useState(false);
   const [notice, setNotice] = useState("");
-  const [searchedAt, setSearchedAt] = useState(0);
   const shown = (tab === "saved" ? data.savedInspiration : results).filter(
     (post) => {
       if (tab === "saved") return true;
-      if (bookmarkedOnly && !data.bookmarkedPostIds.includes(post.id))
-        return false;
-      if (
-        account.trim() &&
-        !post.author.username
-          .toLowerCase()
-          .includes(account.trim().replace(/^@/, "").toLowerCase())
-      )
-        return false;
-      if (period === "all") return true;
-      if (!post.createdAt) return false;
-      const age = searchedAt - new Date(post.createdAt).getTime();
-      return age >= 0 && age <= (period === "day" ? 1 : 7) * 86400000;
+      return !bookmarkedOnly || data.bookmarkedPostIds.includes(post.id);
     },
   );
   async function search() {
     if (!query.trim()) return setError("请输入搜索关键词。");
+    const handle = account.trim();
+    if (handle && !/^@?[A-Za-z0-9_]{1,15}$/.test(handle))
+      return setError(
+        "请输入有效的 X 用户名（最多 15 位字母、数字或下划线）。",
+      );
     setLoading(true);
     setError("");
     try {
       const result = await trpcClient.signals.searchPosts.mutate({
         query: query.trim(),
         mediaOnly: tab === "media",
+        period,
+        ...(handle ? { account: handle } : {}),
       });
       setResults(result);
-      setSearchedAt(Date.now());
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "搜索失败，请稍后重试。",
@@ -917,17 +910,22 @@ export function InspirationPage() {
           <select
             aria-label="时间范围"
             value={period}
-            onChange={(e) => setPeriod(e.target.value as typeof period)}
+            onChange={(e) => {
+              setPeriod(e.target.value as typeof period);
+              setResults([]);
+            }}
           >
             <option value="day">过去 24 小时</option>
             <option value="week">过去一周</option>
-            <option value="all">全部结果</option>
           </select>
           <input
             aria-label="筛选 X 账号"
             value={account}
-            onChange={(e) => setAccount(e.target.value)}
-            placeholder="筛选账号 @handle"
+            onChange={(e) => {
+              setAccount(e.target.value);
+              setResults([]);
+            }}
+            placeholder="指定账号 @handle"
           />
           <label className="studio-inline">
             <input
@@ -945,7 +943,8 @@ export function InspirationPage() {
         ) : (
           <>
             使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
-            。每次查询会消耗 X API 额度；筛选仅作用于本次返回的最多 30 条结果。
+            。每次查询会消耗 X API 额度；时间与账号条件在 X 搜索时生效，最多返回
+            30 条。最近 7 天是当前搜索接口的时间上限；“仅收藏”只筛选本次结果。
           </>
         )}
       </p>
