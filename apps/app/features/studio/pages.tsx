@@ -617,7 +617,12 @@ export function WorkersPage() {
     setNotice("");
     try {
       const result = await trpcClient.studio.generateWorker.mutate({
-        topic: worker.topic || data.products[0] || data.about || "我的专业领域",
+        topic: (
+          worker.topic ||
+          data.products[0] ||
+          data.about ||
+          "我的专业领域"
+        ).slice(0, 200),
         audience: data.audience,
         about: data.about,
         styleGuide: data.vocabulary,
@@ -1301,7 +1306,7 @@ export function ContextPage() {
       <section className="studio-card">
         <h2>Account Rules</h2>
         <p className="studio-muted">
-          这些明确规则会应用于 Worker 生成的模板草稿，优先于 Worker
+          这些明确规则会应用于 Worker 生成的草稿，优先于 Worker
           的额外要求。已保存的草稿不会被改写。
         </p>
         <label>
