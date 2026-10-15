@@ -4,6 +4,7 @@ export function inspirationSearchUrl(input: {
   account?: string;
   period: "day" | "week";
   now: Date;
+  paginationToken?: string;
 }): URL {
   const url = new URL("https://api.x.com/2/tweets/search/recent");
   const terms = [`(${input.query})`];
@@ -16,6 +17,8 @@ export function inspirationSearchUrl(input: {
       new Date(input.now.getTime() - 24 * 60 * 60 * 1000).toISOString(),
     );
   url.searchParams.set("max_results", "30");
+  if (input.paginationToken)
+    url.searchParams.set("pagination_token", input.paginationToken);
   url.searchParams.set("expansions", "author_id,attachments.media_keys");
   url.searchParams.set("tweet.fields", "created_at,public_metrics,attachments");
   url.searchParams.set("user.fields", "name,username");

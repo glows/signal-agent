@@ -47,7 +47,7 @@ export interface FollowerSnapshot {
 }
 export type InspirationPost = Awaited<
   ReturnType<typeof trpcClient.signals.searchPosts.mutate>
->[number];
+>["posts"][number];
 export interface StudioData {
   version: 1;
   posts: StudioPost[];

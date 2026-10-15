@@ -1200,9 +1200,18 @@ export function InspirationPage() {
   const connection = useQuery(signalConnectionQueryOptions(session?.user.id));
   const [query, setQuery] = useState("");
   const [results, setResults] = useState<
-    Awaited<ReturnType<typeof trpcClient.signals.searchPosts.mutate>>
+    Awaited<ReturnType<typeof trpcClient.signals.searchPosts.mutate>>["posts"]
   >([]);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const [nextToken, setNextToken] = useState<string | null>(null);
+  const [searchInput, setSearchInput] = useState<{
+    query: string;
+    mediaOnly: boolean;
+    period: "day" | "week";
+    account?: string;
+    searchAt: string;
+  } | null>(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState<"posts" | "media" | "saved">("posts");
   const [period, setPeriod] = useState<"day" | "week">("week");
@@ -1224,21 +1233,51 @@ export function InspirationPage() {
       );
     setLoading(true);
     setError("");
+    setNextToken(null);
     try {
-      const result = await trpcClient.signals.searchPosts.mutate({
+      const input = {
         query: query.trim(),
         mediaOnly: tab === "media",
         period,
         ...(handle ? { account: handle } : {}),
-      });
-      setResults(result);
+        searchAt: new Date().toISOString(),
+      };
+      const result = await trpcClient.signals.searchPosts.mutate(input);
+      setResults(result.posts);
+      setNextToken(result.nextToken);
+      setSearchInput(input);
     } catch (cause) {
       setError(
         cause instanceof Error ? cause.message : "搜索失败，请稍后重试。",
       );
       setResults([]);
+      setSearchInput(null);
     } finally {
       setLoading(false);
+    }
+  }
+  async function loadMore() {
+    if (!searchInput || !nextToken || loadingMore || loading) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const page = await trpcClient.signals.searchPosts.mutate({
+        ...searchInput,
+        paginationToken: nextToken,
+      });
+      const known = new Set(results.map((post) => post.id));
+      const posts = [
+        ...results,
+        ...page.posts.filter((post) => !known.has(post.id)),
+      ].slice(0, 200);
+      setResults(posts);
+      setNextToken(posts.length >= 200 ? null : page.nextToken);
+    } catch (cause) {
+      setError(
+        cause instanceof Error ? cause.message : "读取更多搜索结果失败。",
+      );
+    } finally {
+      setLoadingMore(false);
     }
   }
   return (
@@ -1249,6 +1288,8 @@ export function InspirationPage() {
           onClick={() => {
             setTab("posts");
             setResults([]);
+            setNextToken(null);
+            setSearchInput(null);
           }}
         >
           Posts
@@ -1258,6 +1299,8 @@ export function InspirationPage() {
           onClick={() => {
             setTab("media");
             setResults([]);
+            setNextToken(null);
+            setSearchInput(null);
           }}
         >
           Media
@@ -1273,7 +1316,12 @@ export function InspirationPage() {
         <div className="studio-search">
           <input
             value={query}
-            onChange={(e) => setQuery(e.target.value)}
+            onChange={(e) => {
+              setQuery(e.target.value);
+              setResults([]);
+              setNextToken(null);
+              setSearchInput(null);
+            }}
             onKeyDown={(e) => {
               if (e.key === "Enter") void search();
             }}
@@ -1296,6 +1344,8 @@ export function InspirationPage() {
             onChange={(e) => {
               setPeriod(e.target.value as typeof period);
               setResults([]);
+              setNextToken(null);
+              setSearchInput(null);
             }}
           >
             <option value="day">过去 24 小时</option>
@@ -1307,6 +1357,8 @@ export function InspirationPage() {
             onChange={(e) => {
               setAccount(e.target.value);
               setResults([]);
+              setNextToken(null);
+              setSearchInput(null);
             }}
             placeholder="指定账号 @handle"
           />
@@ -1326,8 +1378,9 @@ export function InspirationPage() {
         ) : (
           <>
             使用已连接的 X 账号搜索近期{tab === "media" ? "媒体" : "帖子"}
-            。每次查询会消耗 X API 额度；时间与账号条件在 X 搜索时生效，最多返回
-            30 条。最近 7 天是当前搜索接口的时间上限；“仅收藏”只筛选本次结果。
+            。每次查询会消耗 X API 额度；时间与账号条件在 X
+            搜索时生效，每页最多返回 30 条，可按需读取最多 200 条。最近 7
+            天是当前搜索接口的时间上限；“仅收藏”筛选已读取结果。
           </>
         )}
       </p>
@@ -1419,6 +1472,15 @@ export function InspirationPage() {
           </article>
         ))}
       </div>
+      {tab !== "saved" && nextToken && (
+        <button
+          className="studio-secondary"
+          disabled={loading || loadingMore}
+          onClick={() => void loadMore()}
+        >
+          {loadingMore ? "Loading…" : "Load more from X"}
+        </button>
+      )}
       {tab !== "saved" && results.length > 0 && shown.length === 0 && (
         <div className="studio-empty">本次结果中没有符合筛选条件的帖子。</div>
       )}

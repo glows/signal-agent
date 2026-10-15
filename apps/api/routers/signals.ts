@@ -183,6 +183,8 @@ export const signalsRouter = router({
         query: z.string().trim().min(1).max(256),
         mediaOnly: z.boolean().default(false),
         period: z.enum(["day", "week"]).default("week"),
+        paginationToken: z.string().min(1).max(512).optional(),
+        searchAt: z.coerce.date().optional(),
         account: z
           .string()
           .trim()
@@ -193,7 +195,10 @@ export const signalsRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const token = await userXToken(ctx, ctx.user.id);
-      const url = inspirationSearchUrl({ ...input, now: new Date() });
+      const url = inspirationSearchUrl({
+        ...input,
+        now: input.searchAt ?? new Date(),
+      });
       let response: Response;
       try {
         response = await fetch(url, {
@@ -266,6 +271,7 @@ export const signalsRouter = router({
                 .optional(),
             })
             .optional(),
+          meta: z.object({ next_token: z.string().optional() }).optional(),
         })
         .safeParse(await response.json());
       if (!parsed.success)
@@ -282,22 +288,25 @@ export const signalsRouter = router({
           item,
         ]),
       );
-      return (parsed.data.data ?? []).map((post) => ({
-        id: post.id,
-        text: post.text,
-        createdAt: post.created_at ?? null,
-        author: users.get(post.author_id) ?? {
-          id: post.author_id,
-          name: "Unknown",
-          username: "",
-        },
-        likes: post.public_metrics?.like_count ?? 0,
-        replies: post.public_metrics?.reply_count ?? 0,
-        reposts: post.public_metrics?.repost_count ?? 0,
-        media: (post.attachments?.media_keys ?? [])
-          .map((key) => media.get(key))
-          .filter((item) => item !== undefined),
-      }));
+      return {
+        nextToken: parsed.data.meta?.next_token ?? null,
+        posts: (parsed.data.data ?? []).map((post) => ({
+          id: post.id,
+          text: post.text,
+          createdAt: post.created_at ?? null,
+          author: users.get(post.author_id) ?? {
+            id: post.author_id,
+            name: "Unknown",
+            username: "",
+          },
+          likes: post.public_metrics?.like_count ?? 0,
+          replies: post.public_metrics?.reply_count ?? 0,
+          reposts: post.public_metrics?.repost_count ?? 0,
+          media: (post.attachments?.media_keys ?? [])
+            .map((key) => media.get(key))
+            .filter((item) => item !== undefined),
+        })),
+      };
     }),
   discover: protectedProcedure
     .input(
