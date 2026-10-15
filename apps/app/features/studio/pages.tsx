@@ -2117,6 +2117,7 @@ export function AnalyticsPage() {
     ReturnType<typeof trpcClient.signals.analytics.mutate>
   > | null>(null);
   const [loading, setLoading] = useState(false);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [error, setError] = useState("");
   const [days, setDays] = useState(30);
   const [analyticsTab, setAnalyticsTab] = useState<AnalyticsTab>("posts");
@@ -2205,6 +2206,33 @@ export function AnalyticsPage() {
       setError(cause instanceof Error ? cause.message : "读取统计失败。");
     } finally {
       setLoading(false);
+    }
+  }
+  async function loadMore() {
+    if (!metrics?.nextToken || loadingMore || loading) return;
+    setLoadingMore(true);
+    setError("");
+    try {
+      const page = await trpcClient.signals.analyticsPage.mutate({
+        paginationToken: metrics.nextToken,
+      });
+      setMetrics((current) => {
+        if (!current) return current;
+        const known = new Set(current.posts.map((post) => post.id));
+        const posts = [
+          ...current.posts,
+          ...page.posts.filter((post) => !known.has(post.id)),
+        ].slice(0, 200);
+        return {
+          ...current,
+          posts,
+          nextToken: posts.length >= 200 ? null : page.nextToken,
+        };
+      });
+    } catch (cause) {
+      setError(cause instanceof Error ? cause.message : "读取更多帖子失败。");
+    } finally {
+      setLoadingMore(false);
     }
   }
   return (
@@ -2305,7 +2333,7 @@ export function AnalyticsPage() {
       <section className="studio-card">
         <h2>Posts that generated the most engagement</h2>
         <p className="studio-muted">
-          X 返回的近期帖子中，显示所选时间内互动最高的 3 条。
+          已读取的 X 帖子中，显示所选时间内互动最高的 3 条。
         </p>
         {metrics ? (
           topPosts.length ? (
@@ -2418,8 +2446,18 @@ export function AnalyticsPage() {
           </div>
         )}
         <p className="studio-muted">
-          单次读取最多获取 X 最近 30 条帖子；CSV 导出当前时间范围和分类。
+          已读取 {metrics?.posts.length ?? 0} 条 X 帖子；每次额外读取最多 30
+          条，上限 200 条。CSV 导出当前时间范围和分类。
         </p>
+        {metrics?.nextToken && (
+          <button
+            className="studio-secondary"
+            disabled={loadingMore || loading}
+            onClick={() => void loadMore()}
+          >
+            {loadingMore ? "Loading…" : "Load more from X"}
+          </button>
+        )}
       </section>
     </Page>
   );

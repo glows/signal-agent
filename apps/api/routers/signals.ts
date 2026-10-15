@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { protectedProcedure, router } from "../lib/trpc.js";
 import { inspirationSearchUrl } from "../services/inspiration-search.js";
+import { fetchXAnalytics, fetchXTimeline } from "../services/x-analytics.js";
 import { discoverXLeads, XDataError } from "../services/x-data.js";
 import {
   disconnectX,
@@ -136,97 +137,46 @@ export const signalsRouter = router({
         message: "请先连接 X。",
       });
     const token = await userXToken(ctx, ctx.user.id);
-    const endpoints = [
-      `https://api.x.com/2/users/${connection.xAccountId}?user.fields=public_metrics`,
-      `https://api.x.com/2/users/${connection.xAccountId}/tweets?max_results=30&tweet.fields=created_at,public_metrics,referenced_tweets`,
-    ];
-    const payloads: unknown[] = [];
-    for (const endpoint of endpoints) {
-      let response: Response;
-      try {
-        response = await fetch(endpoint, {
-          headers: { Authorization: `Bearer ${token}` },
-          signal: AbortSignal.timeout(20_000),
-        });
-      } catch {
-        throw new TRPCError({
-          code: "BAD_GATEWAY",
-          message: "X 统计请求超时，请稍后重试。",
-        });
-      }
-      if (response.status === 402)
-        throw new TRPCError({
-          code: "PRECONDITION_FAILED",
-          message: "X API 余额不足，请检查 Developer Console。",
-        });
-      if (response.status === 429)
-        throw new TRPCError({
-          code: "TOO_MANY_REQUESTS",
-          message: "X API 已限流，请稍后重试。",
-        });
-      if (!response.ok)
-        throw new TRPCError({
-          code: "BAD_GATEWAY",
-          message: `X 统计请求失败（HTTP ${response.status}）。`,
-        });
-      payloads.push(await response.json());
-    }
+    const [profilePayload, timeline] = await Promise.all([
+      fetchXAnalytics(
+        `https://api.x.com/2/users/${encodeURIComponent(connection.xAccountId)}?user.fields=public_metrics`,
+        token,
+      ),
+      fetchXTimeline(connection.xAccountId, token),
+    ]);
     const profile = z
       .object({
         data: z.object({
           public_metrics: z.object({ followers_count: z.number() }),
         }),
       })
-      .safeParse(payloads[0]);
-    const timeline = z
-      .object({
-        data: z
-          .array(
-            z.object({
-              id: z.string(),
-              text: z.string(),
-              created_at: z.string().optional(),
-              referenced_tweets: z
-                .array(z.object({ type: z.string() }))
-                .optional(),
-              public_metrics: z
-                .object({
-                  like_count: z.number().default(0),
-                  reply_count: z.number().default(0),
-                  repost_count: z.number().default(0),
-                  impression_count: z.number().optional(),
-                })
-                .optional(),
-            }),
-          )
-          .optional(),
-      })
-      .safeParse(payloads[1]);
-    if (!profile.success || !timeline.success)
+      .safeParse(profilePayload);
+    if (!profile.success)
       throw new TRPCError({
         code: "BAD_GATEWAY",
         message: "X 返回的统计数据不完整。",
       });
     return {
       followers: profile.data.data.public_metrics.followers_count,
-      posts: (timeline.data.data ?? []).map((post) => ({
-        id: post.id,
-        text: post.text,
-        createdAt: post.created_at ?? null,
-        kind: post.referenced_tweets?.some((ref) => ref.type === "replied_to")
-          ? ("reply" as const)
-          : post.referenced_tweets?.some((ref) => ref.type === "retweeted")
-            ? ("repost" as const)
-            : post.referenced_tweets?.some((ref) => ref.type === "quoted")
-              ? ("quote" as const)
-              : ("post" as const),
-        likes: post.public_metrics?.like_count ?? 0,
-        replies: post.public_metrics?.reply_count ?? 0,
-        reposts: post.public_metrics?.repost_count ?? 0,
-        impressions: post.public_metrics?.impression_count ?? null,
-      })),
+      ...timeline,
     };
   }),
+  analyticsPage: protectedProcedure
+    .input(z.object({ paginationToken: z.string().min(1).max(512) }))
+    .mutation(async ({ ctx, input }) => {
+      const connection = await xOAuthConnection(ctx, ctx.user.id);
+      if (!connection.xAccountId)
+        throw new TRPCError({
+          code: "PRECONDITION_FAILED",
+          message: "请先连接 X。",
+        });
+      const token = await userXToken(ctx, ctx.user.id);
+      return fetchXTimeline(
+        connection.xAccountId,
+        token,
+        input.paginationToken,
+      );
+    }),
   searchPosts: protectedProcedure
     .input(
       z.object({
