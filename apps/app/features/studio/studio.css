@@ -5,6 +5,20 @@
   color: #141414;
   font-family: Inter, Arial, "Noto Sans SC", sans-serif;
 }
+.studio-hide-scrollbars,
+.studio-hide-scrollbars * {
+  scrollbar-width: none;
+}
+.studio-hide-scrollbars::-webkit-scrollbar,
+.studio-hide-scrollbars *::-webkit-scrollbar {
+  display: none;
+}
+.studio-editor-rtl .studio-page textarea,
+.studio-editor-rtl .studio-page [contenteditable="true"],
+.studio-editor-rtl .studio-post-preview p {
+  direction: rtl;
+  text-align: right;
+}
 .dark .studio-page {
   color: #f2f2f2;
 }

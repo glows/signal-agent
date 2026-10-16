@@ -8,6 +8,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { AuthErrorBoundary } from "#components/auth";
 import { Layout } from "#components/layout";
+import { useStudio } from "#features/studio/store";
 import {
   getCachedSession,
   isValidSession,
@@ -43,10 +44,36 @@ function AppLayout() {
     <AuthErrorBoundary>
       <Layout>
         <SessionGate>
-          <Outlet />
+          <StudioAppearance>
+            <Outlet />
+          </StudioAppearance>
         </SessionGate>
       </Layout>
     </AuthErrorBoundary>
+  );
+}
+
+function StudioAppearance({ children }: { children: ReactNode }) {
+  const { data: session } = useSessionQuery();
+  const { data } = useStudio(session?.user.id ?? "");
+
+  useEffect(() => {
+    document.documentElement.classList.toggle(
+      "studio-hide-scrollbars",
+      !data.showScrollbars,
+    );
+    return () =>
+      document.documentElement.classList.remove("studio-hide-scrollbars");
+  }, [data.showScrollbars]);
+
+  return (
+    <div
+      className={
+        data.textDirection === "rtl" ? "studio-editor-rtl h-full" : "h-full"
+      }
+    >
+      {children}
+    </div>
   );
 }
 
