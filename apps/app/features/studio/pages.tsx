@@ -1,7 +1,7 @@
 import { nextWorkerRun } from "@repo/core/worker-schedule";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 
 import { useSessionQuery } from "#lib/queries/session";
 import { signalConnectionQueryOptions } from "#lib/queries/signals";
@@ -12,6 +12,7 @@ import {
   selectAnalyticsPosts,
   type AnalyticsTab,
 } from "./analytics";
+import { remindersEnabled, setRemindersEnabled } from "./queue-reminders";
 import {
   formatZonedDate,
   formatZonedInput,
@@ -199,6 +200,12 @@ export function ComposePage() {
 
 export function QueuePage() {
   const { data, update, error } = useWorkspace();
+  const { data: session } = useSessionQuery();
+  const userId = session?.user.id ?? "";
+  const [remindersOn, setRemindersOn] = useState(() =>
+    remindersEnabled(userId),
+  );
+  const [now, setNow] = useState(() => Date.now());
   const [editing, setEditing] = useState<string | null>(null);
   const [when, setWhen] = useState("");
   const [publishing, setPublishing] = useState<string | null>(null);
@@ -213,6 +220,33 @@ export function QueuePage() {
   const drafts = data.posts.filter((post) => post.status === "draft");
   const published = data.posts.filter((post) => post.status === "published");
   const slots = upcomingQueueSlots(slotAsOf, data.timezone);
+  useEffect(() => {
+    const timer = window.setInterval(() => setNow(Date.now()), 30_000);
+    return () => window.clearInterval(timer);
+  }, []);
+  async function toggleReminders() {
+    if (!userId) return setNotice("请先登录后开启提醒。");
+    if (remindersOn) {
+      setRemindersEnabled(userId, false);
+      setRemindersOn(false);
+      return setNotice("已关闭此浏览器的排期提醒。");
+    }
+    if (typeof Notification === "undefined")
+      return setNotice("当前浏览器不支持页面通知。");
+    try {
+      const permission =
+        Notification.permission === "granted"
+          ? "granted"
+          : await Notification.requestPermission();
+      if (permission !== "granted")
+        return setNotice("浏览器未授权通知，请在网站权限中允许后重试。");
+      setRemindersEnabled(userId, true);
+      setRemindersOn(true);
+      setNotice("已开启此浏览器的排期提醒；请保持应用页面打开。");
+    } catch {
+      setNotice("无法开启浏览器通知，请检查网站权限。");
+    }
+  }
   function fillSlot(slot: string, now: number) {
     if (Date.parse(slot) <= now)
       return setNotice("这个时间槽已过去，请选择未来时间。");
@@ -390,6 +424,17 @@ export function QueuePage() {
         <p className="studio-muted">
           到达排期时间后，请在这里确认发布。当前不会自动发布。
         </p>
+        <div className="studio-inline">
+          <button
+            className="studio-secondary"
+            onClick={() => void toggleReminders()}
+          >
+            {remindersOn ? "关闭浏览器提醒" : "开启浏览器提醒"}
+          </button>
+          <span className="studio-muted">
+            仅在此浏览器打开应用页面时提醒；关闭页面后不会后台推送。
+          </span>
+        </div>
         {scheduled.length === 0 && (
           <p className="studio-muted">还没有已排期的帖子。</p>
         )}
@@ -402,6 +447,9 @@ export function QueuePage() {
                   : "待选时间"}{" "}
                 · {data.timezone}
               </strong>
+              {post.scheduledAt && Date.parse(post.scheduledAt) <= now && (
+                <span className="studio-queue-due">已到时间 · 待确认发布</span>
+              )}
               <p>{post.text}</p>
               {editing === post.id && (
                 <div className="studio-inline">

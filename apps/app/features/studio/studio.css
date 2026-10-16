@@ -592,6 +592,13 @@
   margin: 4px 0;
   white-space: pre-wrap;
 }
+.studio-queue-due {
+  display: inline-block;
+  margin: 6px 0 0;
+  color: #b45309;
+  font-size: 13px;
+  font-weight: 600;
+}
 .studio-slot-form {
   display: grid;
   gap: 8px;

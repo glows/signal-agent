@@ -8,6 +8,7 @@ import { useEffect, type ReactNode } from "react";
 
 import { AuthErrorBoundary } from "#components/auth";
 import { Layout } from "#components/layout";
+import { notifyDuePosts } from "#features/studio/queue-reminders";
 import { useStudio } from "#features/studio/store";
 import {
   getCachedSession,
@@ -65,6 +66,23 @@ function StudioAppearance({ children }: { children: ReactNode }) {
     return () =>
       document.documentElement.classList.remove("studio-hide-scrollbars");
   }, [data.showScrollbars]);
+
+  useEffect(() => {
+    const userId = session?.user.id;
+    if (!userId) return;
+    const check = () => notifyDuePosts(userId, data.posts);
+    check();
+    const interval = window.setInterval(check, 30_000);
+    window.addEventListener("studio-reminders-change", check);
+    window.addEventListener("focus", check);
+    document.addEventListener("visibilitychange", check);
+    return () => {
+      window.clearInterval(interval);
+      window.removeEventListener("studio-reminders-change", check);
+      window.removeEventListener("focus", check);
+      document.removeEventListener("visibilitychange", check);
+    };
+  }, [session?.user.id, data.posts]);
 
   return (
     <div
