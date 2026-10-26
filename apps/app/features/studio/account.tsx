@@ -35,6 +35,11 @@ export function AccountPage() {
   const [cancelStep, setCancelStep] = useState<"offer" | "confirm" | null>(
     null,
   );
+  const [billingDialog, setBillingDialog] = useState<"plan" | "details" | null>(
+    null,
+  );
+  const [companyName, setCompanyName] = useState("");
+  const [taxId, setTaxId] = useState("");
   return (
     <div className="studio-page">
       <header className="studio-heading">
@@ -198,7 +203,10 @@ export function AccountPage() {
                   {data.billingDemoCanceled ? "将结束" : "Trial"}
                 </strong>
                 <p className="studio-muted">
-                  $49.00 / month ·{" "}
+                  {data.billingDemoPlan === "yearly"
+                    ? "$490.00 / year"
+                    : "$49.00 / month"}{" "}
+                  ·{" "}
                   {data.billingDemoCanceled
                     ? "访问截至 15 Oct, 2026"
                     : "Renews on 15 Oct, 2026"}
@@ -206,7 +214,7 @@ export function AccountPage() {
               </div>
               <button
                 className="studio-secondary"
-                onClick={() => setCancelStep("offer")}
+                onClick={() => setBillingDialog("plan")}
               >
                 Change plan
               </button>
@@ -226,11 +234,18 @@ export function AccountPage() {
             <div className="studio-row">
               <div>
                 <strong>Billing details</strong>
-                <p className="studio-muted">公司名称与税号</p>
+                <p className="studio-muted">
+                  {data.billingCompanyName || "公司名称与税号"}
+                  {data.billingTaxId ? ` · ${data.billingTaxId}` : ""}
+                </p>
               </div>
               <button
                 className="studio-link"
-                onClick={() => window.alert("演示模式：账单信息不可更改。")}
+                onClick={() => {
+                  setCompanyName(data.billingCompanyName);
+                  setTaxId(data.billingTaxId);
+                  setBillingDialog("details");
+                }}
               >
                 Edit
               </button>
@@ -267,6 +282,105 @@ export function AccountPage() {
             >
               恢复演示订阅
             </button>
+          )}
+          {billingDialog && (
+            <div className="studio-modal-backdrop">
+              <dialog
+                open
+                className="studio-modal"
+                aria-modal="true"
+                aria-label={
+                  billingDialog === "plan" ? "Change plan" : "Billing details"
+                }
+              >
+                {billingDialog === "plan" ? (
+                  <>
+                    <h2>Change plan · 演示</h2>
+                    <p className="studio-muted">
+                      选择演示账单周期。不会更改真实订阅或收费。
+                    </p>
+                    <div className="studio-actions">
+                      <button
+                        className={
+                          data.billingDemoPlan === "monthly"
+                            ? "studio-primary"
+                            : "studio-secondary"
+                        }
+                        onClick={() => {
+                          update((current) => ({
+                            ...current,
+                            billingDemoPlan: "monthly",
+                          }));
+                          setBillingDialog(null);
+                        }}
+                      >
+                        $49 / month
+                      </button>
+                      <button
+                        className={
+                          data.billingDemoPlan === "yearly"
+                            ? "studio-primary"
+                            : "studio-secondary"
+                        }
+                        onClick={() => {
+                          update((current) => ({
+                            ...current,
+                            billingDemoPlan: "yearly",
+                          }));
+                          setBillingDialog(null);
+                        }}
+                      >
+                        $490 / year
+                      </button>
+                    </div>
+                  </>
+                ) : (
+                  <form
+                    onSubmit={(event) => {
+                      event.preventDefault();
+                      update((current) => ({
+                        ...current,
+                        billingCompanyName: companyName.trim(),
+                        billingTaxId: taxId.trim(),
+                      }));
+                      setBillingDialog(null);
+                    }}
+                  >
+                    <h2>Billing details · 演示</h2>
+                    <p className="studio-muted">
+                      这些资料只用于演示界面，不会出现在真实发票上。
+                    </p>
+                    <label>
+                      公司名称
+                      <input
+                        value={companyName}
+                        maxLength={120}
+                        onChange={(event) => setCompanyName(event.target.value)}
+                      />
+                    </label>
+                    <label>
+                      税号
+                      <input
+                        value={taxId}
+                        maxLength={80}
+                        onChange={(event) => setTaxId(event.target.value)}
+                      />
+                    </label>
+                    <div className="studio-actions">
+                      <button type="submit" className="studio-primary">
+                        保存
+                      </button>
+                    </div>
+                  </form>
+                )}
+                <button
+                  className="studio-secondary"
+                  onClick={() => setBillingDialog(null)}
+                >
+                  关闭
+                </button>
+              </dialog>
+            </div>
           )}
           {cancelStep && (
             <div className="studio-modal-backdrop">

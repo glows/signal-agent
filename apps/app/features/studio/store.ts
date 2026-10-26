@@ -69,6 +69,9 @@ export interface StudioData {
   showScrollbars: boolean;
   showQuoteConnections: boolean;
   billingDemoCanceled: boolean;
+  billingDemoPlan: "monthly" | "yearly";
+  billingCompanyName: string;
+  billingTaxId: string;
 }
 
 const empty: StudioData = {
@@ -92,6 +95,9 @@ const empty: StudioData = {
   showScrollbars: true,
   showQuoteConnections: true,
   billingDemoCanceled: false,
+  billingDemoPlan: "monthly",
+  billingCompanyName: "",
+  billingTaxId: "",
 };
 
 function key(userId: string) {
